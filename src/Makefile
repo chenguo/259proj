@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=-c -Wall
 LDFLAGS=
-SOURCES=rob_pwr.cpp rob_base.cpp
+SOURCES=main.cpp rob.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=../rob_pwr
 

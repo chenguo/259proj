@@ -1,15 +1,14 @@
-#ifndef ROB_BASE_H
-#define ROB_BASE_H
-
+#ifndef ROB_H
+#define ROB_H
 
 #include "entry.h"
 #include <vector>
 
 using namespace std;
 
-class rob_base {
+class ROB {
 public:
-        rob_base (int s, int n);
+        ROB (int s, int n);
         void run ();
 
         int get_max_size() {return m_size;};

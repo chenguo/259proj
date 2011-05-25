@@ -3,11 +3,12 @@
 #include <unistd.h>
 #include <iostream>
 
-#include "rob_base.h"
+#include "rob.h"
 using namespace std;
 
 enum {
   MODE_BASE,
+  MODE_CIRC,
   MODE_DYN,
   MODE_DIST,
   MODE_LATCH
@@ -20,20 +21,17 @@ int main (int argc, char *argv[])
 {
   char opt;
   int mode = MODE_BASE;
-  bool circular = false;
+  ROB *rob;
 
   while ((opt = getopt (argc, argv, "chm:")) != -1)
     {
       switch (opt)
         {
-          // Run a circular buffer.
-        case 'c':
-          circular = true;
-          break;
-
           // Set mode of ROB simulation.
         case 'm':
-          if (strcmp (optarg, "dynamic") == 0)
+          if (strcmp (optarg, "circular") == 0)
+            mode = MODE_CIRC;
+          else if (strcmp (optarg, "dynamic") == 0)
             mode = MODE_DYN;
           else if (strcmp (optarg, "dist") == 0)
             mode = MODE_DIST;
@@ -56,14 +54,19 @@ int main (int argc, char *argv[])
         }
     }
 
+
+
   switch (mode)
     {
-    case MODE_BASE: {
+    case MODE_BASE:
       cout << "Basic buffer" << endl;
-      rob_base rob (0,0);
-      rob.run ();
+      rob = new ROB (0, 0);
+      rob->run ();
       break;
-    }
+
+    case MODE_CIRC:
+      cout << "Circular buffer" << endl;
+      break;
 
     case MODE_DYN:
       cout << "Dynamic" << endl;

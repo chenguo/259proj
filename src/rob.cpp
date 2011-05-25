@@ -1,9 +1,9 @@
 #include <iostream>
 
-#include "rob_base.h"
+#include "rob.h"
 using namespace std;
 
-rob_base::rob_base(int s, int n)
+ROB::ROB (int s, int n)
         : m_size(s)
         , m_n(n)
 {
@@ -15,7 +15,7 @@ rob_base::rob_base(int s, int n)
         TO_ARF = DATA_SIZE;
 }
 
-void rob_base::run ()
+void ROB::run ()
 {
   cout << "In run method." << endl;
 }
