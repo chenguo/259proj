@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "rob.h"
+#include "rob_circ.h"
 using namespace std;
 
 enum {
@@ -54,18 +55,16 @@ int main (int argc, char *argv[])
         }
     }
 
-
-
   switch (mode)
     {
     case MODE_BASE:
       cout << "Basic buffer" << endl;
       rob = new ROB (0, 0);
-      rob->run ();
       break;
 
     case MODE_CIRC:
       cout << "Circular buffer" << endl;
+      rob = new ROB_Circ (0, 0);
       break;
 
     case MODE_DYN:
@@ -83,6 +82,8 @@ int main (int argc, char *argv[])
     default: break;
     }
 
+  rob->run ();
+
   return 0;
 }
 
@@ -91,6 +92,7 @@ void help ()
   cout << "ROB Power Simulator usage information:" << endl;
   cout << "  $ rob_pwr -m [MODE]" << endl;
   cout << "Modes:" << endl;
+  cout << "  circular   Circular ROB." << endl;
   cout << "  dynamic    Dynamically resized ROB." << endl;
   cout << "  dist       Distributed ROB." << endl;
   cout << "  latch      ROB with retention latches." << endl;

@@ -17,5 +17,5 @@ ROB::ROB (int s, int n)
 
 void ROB::run ()
 {
-  cout << "In run method." << endl;
+  cout << "In base class run method." << endl;
 }

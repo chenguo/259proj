@@ -7,15 +7,15 @@
 using namespace std;
 
 class ROB {
-public:
+ public:
         ROB (int s, int n);
-        void run ();
+        virtual void run ();
 
         int get_max_size() {return m_size;};
         int get_n() {return m_n;};
         int get_head() {return head;};
         int get_tail() {return tail;};
-private:
+ protected:
         int m_size;
         vector<entry> m_buff;
 
