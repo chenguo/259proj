@@ -1,8 +1,10 @@
 #include <cstring>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
 
+#include "ins.h"
 #include "rob.h"
 #include "rob_circ.h"
 using namespace std;
@@ -23,6 +25,7 @@ int main (int argc, char *argv[])
   char opt;
   int mode = MODE_BASE;
   ROB *rob;
+  int *instructions;
 
   while ((opt = getopt (argc, argv, "chm:")) != -1)
     {
@@ -55,6 +58,14 @@ int main (int argc, char *argv[])
         }
     }
 
+  // For now, generate arbitrary mix of instructions.
+  instructions = new int [20];
+  for (int i = 0; i < 19; i++)
+    {
+      instructions[i] = rand () % INS_TYPES;
+    }
+  instructions[19] = -1;
+
   switch (mode)
     {
     case MODE_BASE:
@@ -82,7 +93,7 @@ int main (int argc, char *argv[])
     default: break;
     }
 
-  rob->run ();
+  rob->run (instructions);
 
   return 0;
 }
