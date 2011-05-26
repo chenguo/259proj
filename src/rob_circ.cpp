@@ -13,16 +13,12 @@ ROB_Circ::ROB_Circ (int s, int n) : ROB (s, n)
 }
 
 
-void ROB_Circ::run (int instructions[])
+void ROB_Circ::run (ins_t instructions[])
 {
   cout << "In circular class run method: " << endl;
-  int i = 0;
-  while (instructions[i] > -1)
-    {
-      cout << instructions[i++] << endl;
-    }
 
   int cycles = 0;
+  int ins_num = 0;
   while (cycles++)
     {
       // Read m_n instructions. Increment tail pointer.
@@ -37,13 +33,18 @@ void ROB_Circ::run (int instructions[])
             read_max += m_size;
           read_count = (m_n > read_max)? read_max : m_n;
         }
-      tail_pointer = (taiL_pointer + read_count) % m_size;
 
-      // Count the read ports being driven.
-      // Count flipped bits (for PC, flags, register, and branch prediction)
-      // Count flipped bits for the tail pointer.
+      while (read_count--)
+        {
+          uint32_t old_tail = m_tail;
+          m_tail = (m_tail + 1) % m_size;
 
+          // Read port driven.
+          m_nriq++;
 
+          // TODO: flipped bits (for PC, flags, register, and branch prediction)
+          // TODO: flipped bits for the tail pointer.
+        }
 
       // For each instruction in buffer:
       // Decrement "cycles until ready" count. If 0, mark the entry as valid.

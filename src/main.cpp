@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <iostream>
 
-#include "ins.h"
+#include "common.h"
 #include "rob.h"
 #include "rob_circ.h"
 using namespace std;
@@ -17,7 +17,6 @@ enum {
   MODE_LATCH
 };
 
-
 void help ();
 
 int main (int argc, char *argv[])
@@ -25,7 +24,7 @@ int main (int argc, char *argv[])
   char opt;
   int mode = MODE_BASE;
   ROB *rob;
-  int *instructions;
+  ins_t *instructions;
 
   while ((opt = getopt (argc, argv, "chm:")) != -1)
     {
@@ -59,12 +58,16 @@ int main (int argc, char *argv[])
     }
 
   // For now, generate arbitrary mix of instructions.
-  instructions = new int [20];
+  instructions = new ins_t [20];
+  int pc_start = 0;
   for (int i = 0; i < 19; i++)
     {
-      instructions[i] = rand () % INS_TYPES;
+      instructions[i].type = rand () % INS_TYPES;
+      instructions[i].pc = pc_start;
+      pc_start += 4;
     }
-  instructions[19] = -1;
+  instructions[19].type = -1;
+  instructions[19].pc = -1;
 
   switch (mode)
     {
@@ -95,6 +98,8 @@ int main (int argc, char *argv[])
 
   rob->run (instructions);
 
+
+  delete [] instructions;
   return 0;
 }
 
