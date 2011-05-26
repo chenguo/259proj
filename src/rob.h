@@ -14,10 +14,11 @@ class ROB {
   int get_max_size() {return m_size;};
   int get_n() {return m_n;};
  protected:
-  int m_size;
+  uint32_t m_size;
   entry_t *m_buf;
+  uint32_t m_n;  // n ways super scalar
+  uint32_t m_nbiton;
 
-  int m_n; // n ways super scalar
 /*
   n ports FROM issue queue
   n ports FRROM ex units, assume no double precision

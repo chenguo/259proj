@@ -10,16 +10,17 @@
 // ROB entry.
 typedef struct entry {
   bool valid; //1 is valid
+  // More flags?
   uint32_t cycles;
   uint32_t result;
   uint32_t pc;
-  uint16_t flags;  // TODO: figure out what these flags are.
   uint16_t reg_id;  // only lower bits are used
 } entry_t;
 
 typedef struct instruction {
-  uint32_t type;
+  int type;
   uint32_t pc;
+  uint32_t cycles;
 } ins_t;
 
 // Enumerated instruction types.
@@ -41,6 +42,6 @@ enum {
 extern int ins_cyc[];
 
 // Hamming distance calculator.
-int ham_dist (uint32_t, uint32_t);
+int bits_on (uint32_t, uint32_t);
 
 #endif  // ENTRY_H
