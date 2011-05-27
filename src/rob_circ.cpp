@@ -88,8 +88,8 @@ void ROB_Circ::run (ins_t ins[])
               // Write entry.
               entry_t old_entry = m_buf[m_tail];
               m_buf[m_tail].valid = false;
-              m_buf[m_tail].cycles = ins[ins_num].type;
-              m_buf[m_tail].pc = ins_cyc[ins[ins_num].type];
+              m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
+              m_buf[m_tail].pc = ins[ins_num].pc;
               m_buf[m_tail].reg_id = 0;  // TODO: ???
               ins_num++;
               nread++;

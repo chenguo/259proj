@@ -20,7 +20,6 @@ typedef struct entry {
 typedef struct instruction {
   int type;
   uint32_t pc;
-  uint32_t cycles;
 } ins_t;
 
 // Enumerated instruction types.
@@ -35,10 +34,11 @@ enum {
   FADD,
   FSUB,
   FMULT,
-  FDIV,
-  INS_TYPE
-
+  FDIV
+  //  INS_TYPES
 };
+
+#define INS_TYPES 7
 
 // Instruction cycle cost look up table.
 // TODO: make this exhaustive, and fill in actual numbers.
