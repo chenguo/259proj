@@ -32,6 +32,8 @@ enum {
   SUB,
   MULT,
   DIV,
+  FADD,
+  FSUB,
   FMULT,
   FDIV,
   INS_TYPE

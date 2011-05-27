@@ -1,7 +1,7 @@
 #include "common.h"
 
 int ins_cyc[] = {
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+  20, 20, 1, 1, 3, 18, 3, 3, 5, 6
 };
 
 // Count the number of bits that were turn on from B to A.
