@@ -26,16 +26,17 @@ typedef struct instruction {
 // Enumerated instruction types.
 // TODO: make this exhaustive.
 enum {
-  LOAD,
+  LOAD = 0,
   STORE,
   ADD,
   SUB,
   MULT,
   DIV,
   FMULT,
-  FDIV
+  FDIV,
+  INS_TYPE
+
 };
-#define INS_TYPES 8
 
 // Instruction cycle cost look up table.
 // TODO: make this exhaustive, and fill in actual numbers.
