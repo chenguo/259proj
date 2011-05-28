@@ -21,9 +21,6 @@ void help ();
 
 int main (int argc, char *argv[])
 {
-	cout << "numb "<<num_trans(0xF,0xFFF,32)<<endl;
-	
-	/*
   srand ( time(NULL) );
   char opt;
   int mode = MODE_BASE;
@@ -104,7 +101,6 @@ int main (int argc, char *argv[])
 
 
   delete [] instructions;
-*/
 	 return 0;
 }
 
