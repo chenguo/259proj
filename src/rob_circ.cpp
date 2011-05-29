@@ -148,6 +148,8 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
   uint32_t nread = 0;
   bool skipped = false;
   int exec_ins_num = ins_num;
+  int ileft = m_in; 
+  int fleft = m_fn;
   // Read instructions from issue, if
   // 1. Buffer is empty
   // 2. Buffer is not empty, but head != tail
@@ -173,7 +175,7 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
           if (ins[exec_ins_num].type>=FADD)
           {
 						//2slots left
-						if( ((m_tail+1)%m_size)!= m_head)
+						if( ((m_tail+1)%m_size)!= m_head  && fleft >0 )
 						{
 							 cout<<"FP ins processed"<<endl;
 							 //first entry
@@ -182,9 +184,9 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
       				 m_buf[m_tail].pc = ins[exec_ins_num].pc;
           		 m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xFF;
 							 m_buf[m_tail].isfp = true;
-
+              
+               fleft--;
                m_tail = (m_tail + 1) % m_size;
-								cout<<"end of first 1/2"<<endl;
 							 //will add second entry below
 						}
 						else{
@@ -192,8 +194,25 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
 							skipped = true;
 						}
 					}
+          else
+          {
+            //fp used for X integer ins
+            if(ileft <=0 && fleft> 0)
+            {
+              ileft += 2;
+              fleft--;
+             }
+          
+             //break if no more spots for interger ops
+             if(ileft==0)
+             {
+                break;
+              }
+          }
+
 					//see below
 //					entry_t old_entry = m_buf[m_tail];
+
           m_buf[m_tail].valid = false;
           m_buf[m_tail].cycles = ins_cyc[ins[exec_ins_num].type];
           m_buf[m_tail].pc = ins[exec_ins_num].pc;
@@ -216,7 +235,7 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
 //          m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
 //          m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
         }
-      while (m_tail != old_head && nread < m_n && ins[exec_ins_num].type != -1);
+      while (m_tail != old_head && nread < m_n && ins[exec_ins_num].type != -1 &&   exec_ins_num > (ins_num+10) );
 
       m_empty = false;
       m_nriq += nread;
