@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 
 #include "rob_circ.h"
 using namespace std;
@@ -10,7 +11,10 @@ ROB_Circ::ROB_Circ (int s, int n) : ROB (s, n)
   m_head = 0;
   m_tail = 0;
   m_empty = true;
+  m_head_size = (uint32_t)((log(m_size) / log(2))+1);
+  p_bit_count = (69*m_size + 2*m_head_size);
 }
+
 
 ROB_Circ::~ROB_Circ() {
 }
@@ -57,7 +61,7 @@ void ROB_Circ::run (ins_t ins[])
       cout << "# Bit Transitions: " << p_perCycleBitTransitions << endl;
       cout << "# Bit Transitions to High: " << p_perCycleBitTransitionsHigh << endl;
       cout << "# Bit Transitions to Low: " << p_perCycleBitTransitionsLow << endl;
-      cout << "# Bits: " << (69*m_size + 2*32) << endl;
+      cout << "# Bits: " << p_bit_count << endl;
       cout << "# Bits Low: " << p_perCycleBitsLow << endl;
       cout << "# Bits High: " << p_perCycleBitsHigh << endl << endl;
 
@@ -179,17 +183,17 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
 }
 
 void ROB_Circ::post_cycle_power_tabulation () {
-  p_perCycleBitTransitions += num_trans(m_prev_head, m_head, 32);
-  p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_head, m_head, 32);
-  p_perCycleBitTransitionsLow += num_lo_trans(m_prev_head, m_head, 32);
-  p_perCycleBitsHigh += num_hi(m_head,32);
-  p_perCycleBitsLow += (uint32_t)32 - num_hi(m_head,32);
+  p_perCycleBitTransitions += num_trans(m_prev_head, m_head, m_head_size);
+  p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_head, m_head, m_head_size);
+  p_perCycleBitTransitionsLow += num_lo_trans(m_prev_head, m_head, m_head_size);
+  p_perCycleBitsHigh += num_hi(m_head,m_head_size);
+  p_perCycleBitsLow += m_head_size - num_hi(m_head,m_head_size);
 
-  p_perCycleBitTransitions += num_trans(m_prev_tail, m_tail, 32);
-  p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_tail, m_tail, 32);
-  p_perCycleBitTransitionsLow += num_lo_trans(m_prev_tail, m_tail, 32);
-  p_perCycleBitsHigh += num_hi(m_tail, 32);
-  p_perCycleBitsLow += (uint32_t)32 - num_hi(m_tail, 32);
+  p_perCycleBitTransitions += num_trans(m_prev_tail, m_tail, m_head_size);
+  p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_tail, m_tail, m_head_size);
+  p_perCycleBitTransitionsLow += num_lo_trans(m_prev_tail, m_tail, m_head_size);
+  p_perCycleBitsHigh += num_hi(m_tail, m_head_size);
+  p_perCycleBitsLow += m_head_size - num_hi(m_tail, m_head_size);
 
   uint32_t i;
   for(i = 0; i < m_size; i++) {  

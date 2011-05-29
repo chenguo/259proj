@@ -27,6 +27,7 @@ int main (int argc, char *argv[])
   ROB *rob;
   ins_t *instructions;
   int total_insts = 20;
+  int rob_size = 8;
 
   while ((opt = getopt (argc, argv, "chm:")) != -1)
     {
@@ -74,12 +75,12 @@ int main (int argc, char *argv[])
     {
     case MODE_BASE:
       cout << "Basic buffer" << endl;
-      rob = new ROB (8, 4);
+      rob = new ROB (rob_size, 4);
       break;
 
     case MODE_CIRC:
       cout << "Circular buffer" << endl;
-      rob = new ROB_Circ (8, 4);
+      rob = new ROB_Circ (rob_size, 4);
       break;
 
     case MODE_DYN:
