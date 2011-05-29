@@ -28,6 +28,9 @@ class ROB_Circ : public ROB {
   uint32_t m_prev_head;
   uint32_t m_prev_tail;
 
+  uint32_t p_bit_count;
+  uint32_t m_head_size;
+
   bool m_empty;  // When m_head == m_tail, denote if buffer is empty/full.
 };
 
