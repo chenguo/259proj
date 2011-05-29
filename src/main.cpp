@@ -26,6 +26,7 @@ int main (int argc, char *argv[])
   int mode = MODE_BASE;
   ROB *rob;
   ins_t *instructions;
+  int total_insts = 20;
 
   while ((opt = getopt (argc, argv, "chm:")) != -1)
     {
@@ -52,23 +53,22 @@ int main (int argc, char *argv[])
         case 'h':
           help ();
           return 0;
-
         default: break;
 
         }
     }
 
   // For now, generate arbitrary mix of instructions.
-  instructions = new ins_t [20];
+  instructions = new ins_t [total_insts];
   int pc_start = 0;
-  for (int i = 0; i < 19; i++)
+  for (int i = 0; i < total_insts-1; i++)
     {
       instructions[i].type = rand () % INS_TYPES;
       instructions[i].pc = pc_start;
       pc_start += 4;
     }
-  instructions[19].type = -1;
-  instructions[19].pc = -1;
+  instructions[total_insts-1].type = -1;
+  instructions[total_insts-1].pc = -1;
 
   switch (mode)
     {

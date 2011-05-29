@@ -8,7 +8,7 @@ using namespace std;
 class ROB {
  public:
   ROB (int s, int n);
-  ~ROB ();
+  virtual ~ROB ();
   virtual void run (ins_t instructions[]);
 
   int get_max_size() {return m_size;};
@@ -16,12 +16,13 @@ class ROB {
  protected:
   uint32_t m_size;
   entry_t *m_buf;
+  entry_t *m_prev_buf;
   uint32_t m_n;  // n ways super scalar
   uint32_t m_nbiton;
 
 /*
   n ports FROM issue queue
-  n ports FRROM ex units, assume no double precision
+  n ports FROM ex units, assume no double precision
   2*n ports TO dispatch (forwarding), no double
   n ports TO ARF (commits) // again assume no double
 */
@@ -37,6 +38,19 @@ class ROB {
   int m_nrex;    // Num reads from EX
   int m_nwdu;    // Num writes to DU
   int m_nwarf;   // Num writes to ARF
+
+  // Power tabulation
+  int p_perCycleBitTransitions;
+  int p_perCycleBitTransitionsHigh;
+  int p_perCycleBitTransitionsLow;
+  int p_perCycleBitsHigh;
+  int p_perCycleBitsLow;
+
+  int p_totalBitTransitions;
+  int p_totalBitTransitionsHigh;
+  int p_totalBitTransitionsLow;
+  int p_totalBitsHigh;
+  int p_totalBitsLow;
 };
 
 #endif

@@ -49,4 +49,8 @@ extern int ins_cyc[];
 int bits_on (uint32_t, uint32_t);
 int num_trans(uint32_t oval, uint32_t nval, uint32_t num);
 
+int num_hi_trans(uint32_t oval, uint32_t nval, uint32_t num);
+int num_lo_trans(uint32_t oval, uint32_t nval, uint32_t num);
+
+int num_hi(uint32_t val, uint32_t num);
 #endif  // ENTRY_H

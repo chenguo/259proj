@@ -23,9 +23,36 @@ int bits_on (uint32_t a, uint32_t b)
   return bits_on;
 }
 
+int num_trans(uint32_t oval, uint32_t nval, uint32_t num) {
+  if(num > 32)
+    num = 32;
+  uint32_t count = 0;
+  uint32_t mask = 0x0001;
+  for(uint32_t i = 0; i < num ; i++) {
+    if((mask&oval)^(mask&nval))
+      count++;
+    oval = oval>>1;
+    nval = nval>>1;
+  }
+  return count;
+}
+
+int num_hi(uint32_t val, uint32_t num) {
+  if(num > 32)
+    num = 32;
+  uint32_t count = 0;
+  uint32_t mask = 0x0001;
+  for(uint32_t i = 0; i < num; i++) {
+    if(mask&val)
+      count++;
+    val = val>>1;
+  }
+  return count;
+}
+
 //count number of 0 to 1 transtions from oval to nval
 //num lower bits are used
-int num_trans(uint32_t oval, uint32_t nval, uint32_t num){
+int num_hi_trans(uint32_t oval, uint32_t nval, uint32_t num){
 	if (num > 32) 
 		num = 32;
 
@@ -33,7 +60,7 @@ int num_trans(uint32_t oval, uint32_t nval, uint32_t num){
 	uint32_t mask = 0x0001; 
 	
 	for (uint32_t i = 0; i< num ; i++){
-		if (!oval&mask )
+		if (!(oval&mask) )
 		{
 			if (nval & mask){
 				count++;
@@ -44,3 +71,24 @@ int num_trans(uint32_t oval, uint32_t nval, uint32_t num){
 	}
 	return count;
 }
+
+int num_lo_trans(uint32_t oval, uint32_t nval, uint32_t num){
+        if (num > 32)
+                num = 32;
+
+        uint32_t count=0;
+        uint32_t mask = 0x0001;
+
+        for (uint32_t i = 0; i< num ; i++){
+                if (oval&mask)
+                {
+                        if (!(nval & mask)){
+                                count++;
+                        }
+                }
+                oval= oval>>1;
+                nval = nval >>1;
+        }
+        return count;
+}
+
