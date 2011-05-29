@@ -15,6 +15,7 @@ typedef struct entry {
   uint32_t result;
   uint32_t pc;
   uint16_t reg_id;  // only 4  lower bits are used
+  bool isfp;
 } entry_t;
 
 typedef struct instruction {

@@ -7,7 +7,7 @@ using namespace std;
 
 class ROB {
  public:
-  ROB (int s, int n);
+  ROB (int s, int in, int fn);
   virtual ~ROB ();
   virtual void run (ins_t instructions[]);
 
@@ -17,6 +17,8 @@ class ROB {
   uint32_t m_size;
   entry_t *m_buf;
   entry_t *m_prev_buf;
+  uint32_t m_in; // m_in int units
+  uint32_t m_fn; // m_fn fp units
   uint32_t m_n;  // n ways super scalar
   uint32_t m_nbiton;
 

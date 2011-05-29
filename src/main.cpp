@@ -65,6 +65,8 @@ int main (int argc, char *argv[])
     {
       instructions[i].type = rand () % INS_TYPES;
       instructions[i].pc = pc_start;
+      instructions[i].regs = rand() %0xFFF;
+      instructions[i].exec = false;
       pc_start += 4;
     }
   instructions[total_insts-1].type = -1;
@@ -74,12 +76,12 @@ int main (int argc, char *argv[])
     {
     case MODE_BASE:
       cout << "Basic buffer" << endl;
-      rob = new ROB (8, 4);
+      rob = new ROB (8, 3, 1);
       break;
 
     case MODE_CIRC:
       cout << "Circular buffer" << endl;
-      rob = new ROB_Circ (8, 4);
+      rob = new ROB_Circ (8, 3, 1);
       break;
 
     case MODE_DYN:

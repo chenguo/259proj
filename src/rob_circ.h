@@ -6,7 +6,7 @@ using namespace std;
 
 class ROB_Circ : public ROB {
  public:
-  ROB_Circ (int s, int n);
+  ROB_Circ (int s, int in, int fn);
   virtual ~ROB_Circ();
   virtual void run (ins_t instructions[]);
 

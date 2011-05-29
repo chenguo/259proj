@@ -5,10 +5,12 @@ using namespace std;
 
 extern int ins_cyc[];
 
-ROB::ROB (int s, int n)
+ROB::ROB (int s, int in, int fn)
   : m_size(s)
-  , m_n(n)
+  , m_in(in)
+  , m_fn(fn)
 {
+  m_n = m_in + m_fn;
   m_buf = new entry_t [m_size];
   m_prev_buf = new entry_t [m_size];
   FROM_IQ = PC_SIZE;

@@ -5,7 +5,7 @@ using namespace std;
 
 extern int ins_cyc[];
 
-ROB_Circ::ROB_Circ (int s, int n) : ROB (s, n)
+ROB_Circ::ROB_Circ (int s, int in, int fn) : ROB (s, in, fn)
 {
   m_head = 0;
   m_tail = 0;
@@ -142,7 +142,8 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
                             int ins_num, ins_t ins[])
 {
   uint32_t nread = 0;
-
+  bool skipped = false;
+  int exec_ins_num = ins_num;
   // Read instructions from issue, if
   // 1. Buffer is empty
   // 2. Buffer is not empty, but head != tail
@@ -155,20 +156,63 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
         {
           cout << "Read into " << m_tail << endl;
           // Write entry.
-          entry_t old_entry = m_buf[m_tail];
+
+					//this ins has already been but into the rob
+					if(ins[exec_ins_num].exec)
+					{
+						exec_ins_num++;
+						if(!skipped)
+							ins_num++;
+						continue;
+					}
+					//fp ins
+          if (ins[exec_ins_num].type>=FADD)
+          {
+						//2slots left
+						if( ((m_tail+1)%m_size)!= m_head)
+						{
+							 cout<<"FP ins processed"<<endl;
+							 //first entry
+         			 m_buf[m_tail].valid = false;
+         			 m_buf[m_tail].cycles = ins_cyc[ins[exec_ins_num].type];
+      				 m_buf[m_tail].pc = ins[exec_ins_num].pc;
+          		 m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xFF;
+							 m_buf[m_tail].isfp = true;
+
+               m_tail = (m_tail + 1) % m_size;
+								cout<<"end of first 1/2"<<endl;
+							 //will add second entry below
+						}
+						else{
+							cout<<"no space for a FP.. should skip to next ins"<<endl;
+							skipped = true;
+						}
+					}
+					//see below
+//					entry_t old_entry = m_buf[m_tail];
           m_buf[m_tail].valid = false;
-          m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-          m_buf[m_tail].pc = ins[ins_num].pc;
-          m_buf[m_tail].reg_id = 0;  // TODO: ???
-          ins_num++;
+          m_buf[m_tail].cycles = ins_cyc[ins[exec_ins_num].type];
+          m_buf[m_tail].pc = ins[exec_ins_num].pc;
+          m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xFF;
+				  m_buf[m_tail].isfp=false;
+					ins[exec_ins_num].exec = true;
+					
+    			cout <<"end of second"<<endl;
+          m_tail = (m_tail + 1) % m_size;
+
+					if(!skipped)
+          	ins_num++;
+					exec_ins_num++;
           nread++;
 
+					cout<<"exe_ins_num is "<<exec_ins_num<<endl;
           // Count bits turned on.
-          m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
-          m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
-          m_tail = (m_tail + 1) % m_size;
+					//TODO: we probably dont need this cause alex is
+					//check pointing the states per cycle
+//          m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
+//          m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
         }
-      while (m_tail != old_head && nread < m_n && ins[ins_num].type != -1);
+      while (m_tail != old_head && nread < m_n && ins[exec_ins_num].type != -1);
 
       m_empty = false;
       m_nriq += nread;
