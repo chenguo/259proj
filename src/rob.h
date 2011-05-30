@@ -22,6 +22,9 @@ class ROB {
   uint32_t m_n;  // n ways super scalar
   uint32_t m_nbiton;
 
+  virtual void write_entry (entry_t *entry, ins_t ins) {};
+  virtual void print_msgs (int cycles) {};
+
 /*
   n ports FROM issue queue
   n ports FROM ex units, assume no double precision

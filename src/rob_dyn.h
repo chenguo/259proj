@@ -22,6 +22,7 @@ class ROB_Dyn : public ROB_Circ {
   uint32_t m_part_size;
 
   virtual uint32_t ptr_incr (uint32_t ptr);
+  virtual entry_t *get_entry (uint32_t ptr);
 
  private:
   void dyn_process (int cycles);

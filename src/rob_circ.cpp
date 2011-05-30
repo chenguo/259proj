@@ -1,4 +1,4 @@
-un#include <iostream>
+#include <iostream>
 #include <math.h>
 
 #include "rob_circ.h"
@@ -31,7 +31,6 @@ void ROB_Circ::run (ins_t ins[])
   while (1)
     {
       pre_cycle_power_snapshot();
-      uint32_t old_head = m_head;
       bool old_empty = m_empty;
 
       p_perCycleBitTransitions = 0;
@@ -42,7 +41,7 @@ void ROB_Circ::run (ins_t ins[])
 
       update_entries ();
       write_to_arf ();
-      ins_num = read_from_iq (old_head, old_empty, ins_num, ins);
+      ins_num = read_from_iq (old_empty, ins_num, ins);
 
       // TODO: Count the read ports being driven for operands.
       // Get percentage this happens from Henry.
@@ -50,19 +49,7 @@ void ROB_Circ::run (ins_t ins[])
       post_cycle_power_tabulation();
 
       cycles++;
-      cout << "Cycles: " << cycles << endl;
-      cout << "Head: " << m_head << endl;
-      cout << "Tail: " << m_tail << endl;
-      cout << "Empty: " << m_empty << endl;
-      cout << "Write to ARF: " << m_nwarf << endl;
-      cout << "Read from IQ: " << m_nriq << endl;
-      cout << "Read from EX: " << m_nrex << endl;
-
-      cout << "# Total Bits in ROB: " << p_bit_count << endl;
-      cout << "# Bits Transitioned to High: " << p_perCycleBitTransitionsHigh << endl;
-      cout << "# Bits Transitioned to Low: " << p_perCycleBitTransitionsLow << endl;
-      cout << "# Bits Remained High: " << p_perCycleBitsRemainedHigh << endl;
-      cout << "# Bits Remained Low: " << p_perCycleBitsRemainedLow << endl << endl;
+      print_msgs (cycles);
 
       p_totalBitTransitions += p_perCycleBitTransitions;
       p_totalBitTransitionsHigh += p_perCycleBitTransitionsHigh;
@@ -84,164 +71,142 @@ void ROB_Circ::run (ins_t ins[])
 // cycles to completion count. When it reaches 0, drive the FROM_EX port.
 void ROB_Circ::update_entries ()
 {
-  if (!m_empty)
-    {
-      uint32_t i = m_head;
-      do
-        {
-          if (m_buf[i].cycles)
-            {
-              m_buf[i].cycles--;
+  if (m_empty)
+    return;
 
-              if (m_buf[i].cycles == 0)
-                {
-                  cout << "Got result " << i << endl;
-                  m_buf[i].valid = true;
-                  m_nbiton = bits_on (true, false);
-                  m_nrex++;
-                }
-            }
-          i = (i + 1) % m_size;
+  uint32_t i = m_head;
+  do
+    {
+      entry_t *entry = get_entry (i);
+      if (entry->cycles && --entry->cycles == 0)
+        {
+          cout << "Got result " << i << endl;
+          entry->valid = true;
+          m_nbiton = bits_on (true, false);
+          m_nrex++;
         }
-      while (i != m_tail);
+      i = ptr_incr (i);
     }
+  while (i != m_tail);
 }
 
 // From the head pointer, commit up to m_n instructions to the ARF.
 void ROB_Circ::write_to_arf ()
 {
+  if (m_empty)
+    return;
+
   uint32_t m = m_n;
   uint32_t nwritten = 0;
-  if (!m_empty)
-    {
-      // Loop through entries. Stopping conditions:
-      // 1. m_head == m_tail: buffer is empty
-      // 2. nwritten == m_n: all commit ports used
-      // 3. m_buf[m_head].valid == false: invalid entry
-      do
-        {
-          // Check entry for validity.
-          if (m_buf[m_head].valid)
-            {
-              // If valid, commit it.
-              if (m_buf[m_head].isfp)
-                m++;
-              cout << "Write from " << m_head << endl;
-              m_head = (m_head + 1) % m_size;
-              nwritten++;
-            }
-        }
-      while (m_head != m_tail && nwritten < m && m_buf[m_head].valid);
-      // Update writes to ARF count.
-      m_nwarf += nwritten;
+  entry_t *entry = NULL;
 
-      // If buffer is emty now, set the flag.
-      if (m_head == m_tail && nwritten)
-        m_empty = true;
+  // Loop through entries. Stopping conditions:
+  // 1. m_head == m_tail: buffer is empty
+  // 2. nwritten == m_n: all commit ports used
+  // 3. m_buf[m_head].valid == false: invalid entry
+  do
+    {
+      // Get entry and check it for validity. If valid, commit it.
+      entry = get_entry (m_head);
+      if (entry->valid)
+        {
+          if (entry->isfp)
+            m++;
+          cout << "Write from " << m_head << endl;
+          m_head = ptr_incr (m_head);
+          nwritten++;
+        }
     }
+  while (m_head != m_tail && nwritten < m && entry->valid);
+  // Update writes to ARF count.
+  m_nwarf += nwritten;
+
+  // If buffer is emty now, set the flag.
+  if (m_head == m_tail && nwritten)
+    m_empty = true;
+
   // Process head pointer bit flips.
-  m_nbiton = bits_on (m_head, m_head - nwritten);
+  //m_nbiton = bits_on (m_head, m_head - nwritten);
 }
 
 // Read instructions from issue, up to m_n instructions.
-int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
-                            int ins_num, ins_t ins[])
+int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
 {
   uint32_t nread = 0;
-  int ileft = m_in;
-  int fleft = m_fn;
+  uint32_t nentries = 0;
 
-  uint16_t reg_mask = 0xF;
   // Read instructions from issue, if
   // 1. Buffer is empty
   // 2. Buffer is not empty, but head != tail
   //    (buffer is full if !empty and head == tail)
   // 3. Instruction sequence isn't over (denoted by -1 type)
-  if ((old_empty || (old_head != m_tail))
+  if ((old_empty || (m_prev_head != m_tail))
       && ins[ins_num].type != -1)
     {
       do
         {
           cout << "Read into " << m_tail << endl;
+
           // Write entry.
-
-          //fp ins
-          if (ins[ins_num].type>=FADD)
+          // FP instruction uses 2 slots.
+          if (ins[ins_num].type >= FADD)
             {
-              //2slots left
-              if( ((m_tail+1)%m_size)!= m_head  && fleft >0 )
+              if (ptr_incr (m_tail) != m_head)
                 {
-                  cout<<"FP ins processed"<<endl;
-                  //first entry
-                  m_buf[m_tail].valid = false;
-                  m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-                  m_buf[m_tail].pc = ins[ins_num].pc;
-                  m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-                  m_buf[m_tail].isfp = true;
+                  cout << "FP ins processed" << endl;
 
-                  fleft--;
-                  m_tail = (m_tail + 1) % m_size;
-
-                  if(isinROB( (ins[ins_num].regs>>4)&reg_mask  ))
-                    m_nwdu++;
-                  if(isinROB( (ins[ins_num].regs>>8)&reg_mask   ))
-                    m_nwdu++;
-
-                  //will add second entry below
+                  // First half of entry.
+                  write_entry (get_entry (m_tail), ins[ins_num]);
+                  nentries++;
                 }
-              else{
-                cout<<"no space for a FP.. should skip to next ins"<<endl;
-              }
-            }
-          else
-            {
-              //fp used for X integer ins
-              if(ileft <=0 && fleft> 0)
+              else
                 {
-                  ileft += 2;
-                  fleft--;
-                }
-
-              //break if no more spots for interger ops
-              if(ileft==0)
-                {
+                  cout<<"No space for a FP, stall."<<endl;
                   break;
                 }
             }
 
-          // see below
-          // entry_t old_entry = m_buf[m_tail];
+          write_entry (get_entry (m_tail), ins[ins_num]);
+          nentries++;
 
-          m_buf[m_tail].valid = false;
-          m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-          m_buf[m_tail].pc = ins[ins_num].pc;
-          m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-          m_buf[m_tail].isfp=false;
-
-          if(isinROB( (ins[ins_num].regs>>4)&reg_mask   ))
-            m_nwdu++;
-          if(isinROB( (ins[ins_num].regs>>8)&reg_mask  ))
-            m_nwdu++;
-
-
-          m_tail = (m_tail + 1) % m_size;
-          ins_num++;
           nread++;
-
-          // Count bits turned on.
-          // TODO: we probably dont need this cause alex is
-          // check pointing the states per cycle
-          // m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
-          // m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
+          ins_num++;
         }
-      while (m_tail != old_head && nread < m_n && ins[ins_num].type != -1 );
+      while (m_tail != m_prev_head && nentries < m_n && ins[ins_num].type > -1);
 
       m_empty = false;
       m_nriq += nread;
     }
-  // Process tail pointer bit flips.
-  m_nbiton += bits_on (m_tail, m_tail - nread);
+
   return ins_num;
+}
+
+uint32_t ROB_Circ::ptr_incr (uint32_t ptr)
+{
+  return (ptr + 1) % m_size;
+}
+
+entry_t *ROB_Circ::get_entry (uint32_t ptr)
+{
+  return &m_buf[ptr];
+}
+
+void ROB_Circ::write_entry (entry *entry, ins_t ins)
+{
+  uint16_t reg_mask = 0xF;
+
+  entry->valid = false;
+  entry->cycles = ins_cyc[ins.type];
+  entry->pc = ins.pc;
+  entry->reg_id = ins.regs & reg_mask;
+  entry->isfp = (ins.type >= FADD);
+
+  m_tail = ptr_incr (m_tail);
+
+  if(isinROB ((ins.regs >> 4) & reg_mask))
+    m_nwdu++;
+  if(isinROB ((ins.regs >> 8) & reg_mask))
+    m_nwdu++;
 }
 
 void ROB_Circ::post_cycle_power_tabulation () {
@@ -339,4 +304,19 @@ bool ROB_Circ::isinROB( uint16_t reg)
   return false;
 }
 
+void ROB_Circ::print_msgs (int cycles)
+{
+  cout << "Cycles: " << cycles << endl;
+  cout << "Head: " << m_head << endl;
+  cout << "Tail: " << m_tail << endl;
+  cout << "Empty: " << m_empty << endl;
+  cout << "Write to ARF: " << m_nwarf << endl;
+  cout << "Read from IQ: " << m_nriq << endl;
+  cout << "Read from EX: " << m_nrex << endl;
 
+  cout << "# Total Bits in ROB: " << p_bit_count << endl;
+  cout << "# Bits Transitioned to High: " << p_perCycleBitTransitionsHigh << endl;
+  cout << "# Bits Transitioned to Low: " << p_perCycleBitTransitionsLow << endl;
+  cout << "# Bits Remained High: " << p_perCycleBitsRemainedHigh << endl;
+  cout << "# Bits Remained Low: " << p_perCycleBitsRemainedLow << endl << endl;
+}

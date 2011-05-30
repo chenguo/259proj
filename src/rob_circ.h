@@ -17,13 +17,16 @@ class ROB_Circ : public ROB {
  protected:
   void update_entries ();
   void write_to_arf ();
-  int read_from_iq (uint32_t, bool, int, ins_t[]);
+  int read_from_iq (bool, int, ins_t[]);
 
   virtual uint32_t ptr_incr (uint32_t ptr);
+  virtual entry_t *get_entry (uint32_t ptr);
+  virtual void write_entry (entry_t *entry, ins_t ins);
+  virtual void print_msgs (int cycles);
 
   void pre_cycle_power_snapshot();
   void post_cycle_power_tabulation();
-  void print_power_stats(int cycles);
+  void print_power_stats (int cycles);
 
 
 

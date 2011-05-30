@@ -42,27 +42,37 @@ void ROB_Dyn::run (ins_t ins[])
   int cycles = 0;
   int ins_num = 0;
 
+  // TODO: power tabulation. Should be largely the same as circular, but
+  // with the added cost of sampling and resizing circuitry.
   while (1)
     {
+      // TODO: get overflow count.
+      // Should be when m_head - m_prev_head < m_n, but think about it more.
+
+      bool old_empty = m_empty;
+      update_entries ();
+      write_to_arf ();
+      ins_num = read_from_iq (old_empty, ins_num, ins);
+
       cycles++;
       dyn_process (cycles);
 
-
+      if (m_empty && ins[ins_num].type == -1)
+        break;
     }
 }
 
 // Increment a point (head or tail) by one. Does not check for
 // validity of pointer (i.e. tail passing head)
-void ROB_Dyn::ptr_incr (uint32_t ptr)
+uint32_t ROB_Dyn::ptr_incr (uint32_t ptr)
 {
   ptr++;
   if (ptr % m_part_size == 0)
     {
       // Pointer incremented to next partition. Make sure it's a valid one.
       int part_num = ptr / m_part_size;
-      while (m_parts[part_num].use == false)
+      while (m_parts[part_num++].use == false)
         {
-          part_num++;
           // If pointer runs off end, put it at beginning.
           if (part_num == m_nparts)
             {
@@ -76,12 +86,22 @@ void ROB_Dyn::ptr_incr (uint32_t ptr)
   return ptr;
 }
 
+// Get the entry associated with the pointer.
+entry_t *ROB_Dyn::get_entry (uint32_t ptr)
+{
+  int part = ptr / m_nparts;
+  int off = ptr % m_nparts;
+
+  return &m_parts[part].buf[off];
+}
+
 // Take samples, and check if the buffer needs to be resized.
 void ROB_Dyn::dyn_process (int cycles)
 {
+  // Update sampled average active size.
   if (cycles % m_sample_period == 0)
     {
-      // Get entries used count.
+      // TODO: Get entries used count.
       int used = 0;
 
       // Figure into samples.
@@ -90,9 +110,9 @@ void ROB_Dyn::dyn_process (int cycles)
       m_active_size = tmp / m_samples_taken;
     }
 
+  // Update buffer size.
   if (cycles % m_update_period == 0)
     {
-      // Update buffer size, if necessary.
       if (m_current_size - m_active_size > m_part_size)
         {
           // Shrink buffer.
