@@ -145,8 +145,6 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
                             int ins_num, ins_t ins[])
 {
   uint32_t nread = 0;
-  bool skipped = false;
-  int exec_ins_num = ins_num;
   int ileft = m_in; 
   int fleft = m_fn;
 
@@ -164,16 +162,8 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
           cout << "Read into " << m_tail << endl;
           // Write entry.
 
-					//this ins has already been but into the rob
-					if(ins[exec_ins_num].exec)
-					{
-						exec_ins_num++;
-						if(!skipped)
-							ins_num++;
-						continue;
-					}
 					//fp ins
-          if (ins[exec_ins_num].type>=FADD)
+          if (ins[ins_num].type>=FADD)
           {
 						//2slots left
 						if( ((m_tail+1)%m_size)!= m_head  && fleft >0 )
@@ -181,24 +171,23 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
 							 cout<<"FP ins processed"<<endl;
 							 //first entry
          			 m_buf[m_tail].valid = false;
-         			 m_buf[m_tail].cycles = ins_cyc[ins[exec_ins_num].type];
-      				 m_buf[m_tail].pc = ins[exec_ins_num].pc;
-          		 m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xF;
+         			 m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
+      				 m_buf[m_tail].pc = ins[ins_num].pc;
+          		 m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
 							 m_buf[m_tail].isfp = true;
               
                fleft--;
                m_tail = (m_tail + 1) % m_size;
 
-               if(isinROB( (ins[exec_ins_num].regs>>4)&0xF   ))
+               if(isinROB( (ins[ins_num].regs>>4)&reg_mask  ))
                   m_nwdu++;
-               if(isinROB( (ins[exec_ins_num].regs>>8)&0xF   ))
+               if(isinROB( (ins[ins_num].regs>>8)&reg_mask   ))
                   m_nwdu++;
 
 							 //will add second entry below
 						}
 						else{
 							cout<<"no space for a FP.. should skip to next ins"<<endl;
-							skipped = true;
 						}
 					}
           else
@@ -221,23 +210,19 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
 //					entry_t old_entry = m_buf[m_tail];
 
           m_buf[m_tail].valid = false;
-          m_buf[m_tail].cycles = ins_cyc[ins[exec_ins_num].type];
-          m_buf[m_tail].pc = ins[exec_ins_num].pc;
-          m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xFF;
+          m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
+          m_buf[m_tail].pc = ins[ins_num].pc;
+          m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
 				  m_buf[m_tail].isfp=false;
-					ins[exec_ins_num].exec = true;
 
-         if(isinROB( (ins[exec_ins_num].regs>>4)&0xF   ))
+         if(isinROB( (ins[ins_num].regs>>4)&reg_mask   ))
             m_nwdu++;
-         if(isinROB( (ins[exec_ins_num].regs>>8)&0xF   ))
+         if(isinROB( (ins[ins_num].regs>>8)&reg_mask  ))
             m_nwdu++;
 					
 
           m_tail = (m_tail + 1) % m_size;
-
-					if(!skipped)
-          	ins_num++;
-					exec_ins_num++;
+          ins_num++;
           nread++;
 
           // Count bits turned on.
@@ -246,7 +231,7 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
 //          m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
 //          m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
         }
-      while (m_tail != old_head && nread < m_n && ins[exec_ins_num].type != -1 &&   exec_ins_num > (ins_num+10) );
+      while (m_tail != old_head && nread < m_n && ins[ins_num].type != -1 );
 
       m_empty = false;
       m_nriq += nread;
