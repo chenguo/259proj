@@ -110,6 +110,7 @@ void ROB_Circ::update_entries ()
 // From the head pointer, commit up to m_n instructions to the ARF.
 void ROB_Circ::write_to_arf ()
 {
+  uint32_t m = m_n;
   uint32_t nwritten = 0;
   if (!m_empty)
     {
@@ -123,12 +124,14 @@ void ROB_Circ::write_to_arf ()
           if (m_buf[m_head].valid)
             {
               // If valid, commit it.
-              cout << "Write from " << m_head << endl;
+              if (m_buf[m_head].isfp)
+								m++;
+							cout << "Write from " << m_head << endl;
               m_head = (m_head + 1) % m_size;
               nwritten++;
             }
         }
-      while (m_head != m_tail && nwritten < m_n && m_buf[m_head].valid);
+      while (m_head != m_tail && nwritten < m && m_buf[m_head].valid);
       // Update writes to ARF count.
       m_nwarf += nwritten;
 
