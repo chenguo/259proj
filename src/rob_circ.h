@@ -19,6 +19,8 @@ class ROB_Circ : public ROB {
   void write_to_arf ();
   int read_from_iq (uint32_t, bool, int, ins_t[]);
 
+  virtual uint32_t ptr_incr (uint32_t ptr);
+
   void pre_cycle_power_snapshot();
   void post_cycle_power_tabulation();
   void print_power_stats(int cycles);

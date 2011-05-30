@@ -1,4 +1,4 @@
-#include <iostream>
+un#include <iostream>
 #include <math.h>
 
 #include "rob_circ.h"
@@ -125,8 +125,8 @@ void ROB_Circ::write_to_arf ()
             {
               // If valid, commit it.
               if (m_buf[m_head].isfp)
-								m++;
-							cout << "Write from " << m_head << endl;
+                m++;
+              cout << "Write from " << m_head << endl;
               m_head = (m_head + 1) % m_size;
               nwritten++;
             }
@@ -148,7 +148,7 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
                             int ins_num, ins_t ins[])
 {
   uint32_t nread = 0;
-  int ileft = m_in; 
+  int ileft = m_in;
   int fleft = m_fn;
 
   uint16_t reg_mask = 0xF;
@@ -165,74 +165,74 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
           cout << "Read into " << m_tail << endl;
           // Write entry.
 
-					//fp ins
+          //fp ins
           if (ins[ins_num].type>=FADD)
-          {
-						//2slots left
-						if( ((m_tail+1)%m_size)!= m_head  && fleft >0 )
-						{
-							 cout<<"FP ins processed"<<endl;
-							 //first entry
-         			 m_buf[m_tail].valid = false;
-         			 m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-      				 m_buf[m_tail].pc = ins[ins_num].pc;
-          		 m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-							 m_buf[m_tail].isfp = true;
-              
-               fleft--;
-               m_tail = (m_tail + 1) % m_size;
-
-               if(isinROB( (ins[ins_num].regs>>4)&reg_mask  ))
-                  m_nwdu++;
-               if(isinROB( (ins[ins_num].regs>>8)&reg_mask   ))
-                  m_nwdu++;
-
-							 //will add second entry below
-						}
-						else{
-							cout<<"no space for a FP.. should skip to next ins"<<endl;
-						}
-					}
-          else
-          {
-            //fp used for X integer ins
-            if(ileft <=0 && fleft> 0)
             {
-              ileft += 2;
-              fleft--;
-             }
-          
-             //break if no more spots for interger ops
-             if(ileft==0)
-             {
-                break;
-              }
-          }
+              //2slots left
+              if( ((m_tail+1)%m_size)!= m_head  && fleft >0 )
+                {
+                  cout<<"FP ins processed"<<endl;
+                  //first entry
+                  m_buf[m_tail].valid = false;
+                  m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
+                  m_buf[m_tail].pc = ins[ins_num].pc;
+                  m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
+                  m_buf[m_tail].isfp = true;
 
-					//see below
-//					entry_t old_entry = m_buf[m_tail];
+                  fleft--;
+                  m_tail = (m_tail + 1) % m_size;
+
+                  if(isinROB( (ins[ins_num].regs>>4)&reg_mask  ))
+                    m_nwdu++;
+                  if(isinROB( (ins[ins_num].regs>>8)&reg_mask   ))
+                    m_nwdu++;
+
+                  //will add second entry below
+                }
+              else{
+                cout<<"no space for a FP.. should skip to next ins"<<endl;
+              }
+            }
+          else
+            {
+              //fp used for X integer ins
+              if(ileft <=0 && fleft> 0)
+                {
+                  ileft += 2;
+                  fleft--;
+                }
+
+              //break if no more spots for interger ops
+              if(ileft==0)
+                {
+                  break;
+                }
+            }
+
+          // see below
+          // entry_t old_entry = m_buf[m_tail];
 
           m_buf[m_tail].valid = false;
           m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
           m_buf[m_tail].pc = ins[ins_num].pc;
           m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-				  m_buf[m_tail].isfp=false;
+          m_buf[m_tail].isfp=false;
 
-         if(isinROB( (ins[ins_num].regs>>4)&reg_mask   ))
+          if(isinROB( (ins[ins_num].regs>>4)&reg_mask   ))
             m_nwdu++;
-         if(isinROB( (ins[ins_num].regs>>8)&reg_mask  ))
+          if(isinROB( (ins[ins_num].regs>>8)&reg_mask  ))
             m_nwdu++;
-					
+
 
           m_tail = (m_tail + 1) % m_size;
           ins_num++;
           nread++;
 
           // Count bits turned on.
-					//TODO: we probably dont need this cause alex is
-					//check pointing the states per cycle
-//          m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
-//          m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
+          // TODO: we probably dont need this cause alex is
+          // check pointing the states per cycle
+          // m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
+          // m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
         }
       while (m_tail != old_head && nread < m_n && ins[ins_num].type != -1 );
 
@@ -262,7 +262,7 @@ void ROB_Circ::post_cycle_power_tabulation () {
   p_perCycleBitsRemainedLow += m_head_size - num_hi(m_tail, m_head_size) - num_lo_trans(m_prev_tail, m_tail, m_head_size);
 
   uint32_t i;
-  for(i = 0; i < m_size; i++) {  
+  for(i = 0; i < m_size; i++) {
     if(m_prev_buf[i].valid != m_buf[i].valid)
       cout << "*TRANSITION* m_buf[" << i << "].valid: " << m_prev_buf[i].valid << "->" << m_buf[i].valid << endl;
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
@@ -288,7 +288,7 @@ void ROB_Circ::post_cycle_power_tabulation () {
     p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(m_buf[i].reg_id, 4) - num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
 
     if(m_prev_buf[i].result != m_buf[i].result)
-      cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl; 
+      cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl;
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
