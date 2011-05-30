@@ -134,6 +134,7 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
 {
   uint32_t nread = 0;
   uint32_t nentries = 0;
+  uint32_t f_issued = 0;
 
   // Read instructions from issue, if
   // 1. Buffer is empty
@@ -158,6 +159,7 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
                   // First half of entry.
                   write_entry (get_entry (m_tail), ins[ins_num]);
                   nentries++;
+                  f_issued++;
                 }
               else
                 {
@@ -176,6 +178,11 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
 
       m_empty = false;
       m_nriq += nread;
+
+      if (f_issued > m_fn)
+        m_fp_delay += f_issued - m_fn;
+      else
+        m_fp_delay -= m_fn - f_issued;
     }
 
   return ins_num;
@@ -197,6 +204,8 @@ void ROB_Circ::write_entry (entry *entry, ins_t ins)
 
   entry->valid = false;
   entry->cycles = ins_cyc[ins.type];
+  if (ins.type >= FADD)
+    entry->cycles += m_fp_delay;
   entry->pc = ins.pc;
   entry->reg_id = ins.regs & reg_mask;
   entry->isfp = (ins.type >= FADD);

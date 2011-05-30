@@ -19,6 +19,7 @@ class ROB {
   entry_t *m_prev_buf;
   uint32_t m_in; // m_in int units
   uint32_t m_fn; // m_fn fp units
+  uint32_t m_fp_delay; // Models "backed-up"-ness of FP units.
   uint32_t m_n;  // n ways super scalar
   uint32_t m_nbiton;
 
