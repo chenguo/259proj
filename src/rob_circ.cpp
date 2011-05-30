@@ -150,6 +150,8 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
   int exec_ins_num = ins_num;
   int ileft = m_in; 
   int fleft = m_fn;
+
+  uint16_t reg_mask = 0xF;
   // Read instructions from issue, if
   // 1. Buffer is empty
   // 2. Buffer is not empty, but head != tail
@@ -182,11 +184,17 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
          			 m_buf[m_tail].valid = false;
          			 m_buf[m_tail].cycles = ins_cyc[ins[exec_ins_num].type];
       				 m_buf[m_tail].pc = ins[exec_ins_num].pc;
-          		 m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xFF;
+          		 m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xF;
 							 m_buf[m_tail].isfp = true;
               
                fleft--;
                m_tail = (m_tail + 1) % m_size;
+
+               if(isinROB( (ins[exec_ins_num].regs>>4)&0xF   ))
+                  m_nwdu++;
+               if(isinROB( (ins[exec_ins_num].regs>>8)&0xF   ))
+                  m_nwdu++;
+
 							 //will add second entry below
 						}
 						else{
@@ -219,8 +227,13 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
           m_buf[m_tail].reg_id = ins[exec_ins_num].regs&0xFF;
 				  m_buf[m_tail].isfp=false;
 					ins[exec_ins_num].exec = true;
+
+         if(isinROB( (ins[exec_ins_num].regs>>4)&0xF   ))
+            m_nwdu++;
+         if(isinROB( (ins[exec_ins_num].regs>>8)&0xF   ))
+            m_nwdu++;
 					
-    			cout <<"end of second"<<endl;
+
           m_tail = (m_tail + 1) % m_size;
 
 					if(!skipped)
@@ -228,7 +241,6 @@ int ROB_Circ::read_from_iq (uint32_t old_head, bool old_empty,
 					exec_ins_num++;
           nread++;
 
-					cout<<"exe_ins_num is "<<exec_ins_num<<endl;
           // Count bits turned on.
 					//TODO: we probably dont need this cause alex is
 					//check pointing the states per cycle
@@ -308,6 +320,24 @@ void ROB_Circ::print_power_stats () {
   cout << "Total # bits low: " << p_totalBitsLow << endl;
   cout << "Total # bits high: " << p_totalBitsHigh << endl;
   cout << endl;
+}
+
+
+bool ROB_Circ::isinROB( uint16_t reg)
+{
+  if (!m_empty)
+    {
+      uint32_t i = m_head;
+      do
+        {
+          p_reg_comp_used++;
+          if (m_buf[i].reg_id == reg)
+            return true;
+          i = (i + 1) % m_size;
+        }
+      while (i != m_tail);
+    }
+  return false;
 }
 
 

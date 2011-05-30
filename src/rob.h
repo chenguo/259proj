@@ -53,6 +53,8 @@ class ROB {
   int p_totalBitTransitionsLow;
   int p_totalBitsHigh;
   int p_totalBitsLow;
+
+  int p_reg_comp_used; 
 };
 
 #endif

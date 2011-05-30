@@ -9,6 +9,7 @@ class ROB_Circ : public ROB {
   ROB_Circ (int s, int in, int fn);
   virtual ~ROB_Circ();
   virtual void run (ins_t instructions[]);
+  bool isinROB( uint16_t reg);
 
   int get_head() {return m_head;};
   int get_tail() {return m_tail;};
@@ -22,6 +23,8 @@ class ROB_Circ : public ROB {
   void post_cycle_power_tabulation();
   void print_power_stats();
 
+
+
   uint32_t m_head;
   uint32_t m_tail;
 
@@ -30,6 +33,7 @@ class ROB_Circ : public ROB {
 
   uint32_t p_bit_count;
   uint32_t m_head_size;
+
 
   bool m_empty;  // When m_head == m_tail, denote if buffer is empty/full.
 };
