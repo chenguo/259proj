@@ -181,7 +181,7 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
 
       if (f_issued > m_fn)
         m_fp_delay += f_issued - m_fn;
-      else
+      else if (m_fp_delay >= m_fn - f_issued)
         m_fp_delay -= m_fn - f_issued;
     }
 

@@ -7,6 +7,7 @@
 #include "common.h"
 #include "rob.h"
 #include "rob_circ.h"
+#include "rob_dyn.h"
 #include "rob_latch.h"
 using namespace std;
 
@@ -88,6 +89,7 @@ int main (int argc, char *argv[])
 
     case MODE_DYN:
       cout << "Dynamic" << endl;
+      rob = new ROB_Dyn (rob_size, 3, 1, 16, 4);
       break;
 
     case MODE_DIST:
@@ -106,7 +108,7 @@ int main (int argc, char *argv[])
 
 
   delete [] instructions;
-	 return 0;
+  return 0;
 }
 
 void help ()

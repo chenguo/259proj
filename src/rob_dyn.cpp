@@ -55,6 +55,7 @@ void ROB_Dyn::run (ins_t ins[])
       ins_num = read_from_iq (old_empty, ins_num, ins);
 
       cycles++;
+      cout << "Cycle " << cycles << endl;
       dyn_process (cycles);
 
       if (m_empty && ins[ins_num].type == -1)
