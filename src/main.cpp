@@ -77,12 +77,12 @@ int main (int argc, char *argv[])
     {
     case MODE_BASE:
       cout << "Basic buffer" << endl;
-      rob = new ROB (8, 3, 1);
+      rob = new ROB (rob_size, 3, 1);
       break;
 
     case MODE_CIRC:
       cout << "Circular buffer" << endl;
-      rob = new ROB_Circ (8, 3, 1);
+      rob = new ROB_Circ (rob_size, 3, 1);
       break;
 
     case MODE_DYN:

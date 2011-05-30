@@ -45,14 +45,14 @@ class ROB {
   int p_perCycleBitTransitions;
   int p_perCycleBitTransitionsHigh;
   int p_perCycleBitTransitionsLow;
-  int p_perCycleBitsHigh;
-  int p_perCycleBitsLow;
+  int p_perCycleBitsRemainedHigh;
+  int p_perCycleBitsRemainedLow;
 
   int p_totalBitTransitions;
   int p_totalBitTransitionsHigh;
   int p_totalBitTransitionsLow;
-  int p_totalBitsHigh;
-  int p_totalBitsLow;
+  int p_totalBitsRemainedHigh;
+  int p_totalBitsRemainedLow;
 
   int p_reg_comp_used; 
 };

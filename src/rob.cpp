@@ -21,8 +21,8 @@ ROB::ROB (int s, int in, int fn)
   p_totalBitTransitions = 0;
   p_totalBitTransitionsHigh = 0;
   p_totalBitTransitionsLow = 0;
-  p_totalBitsHigh = 0;
-  p_totalBitsLow = 0;
+  p_totalBitsRemainedHigh = 0;
+  p_totalBitsRemainedLow = 0;
   p_reg_comp_used = 0;
 }
 
