@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "rob_latch.h"
+
 using namespace std;
 
 extern int ins_cyc[];
@@ -9,6 +10,7 @@ extern int ins_cyc[];
 ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize)
   : ROB_Circ (s, in, fn)
 {
+  fwdcnt = 0;
   m_lhead = 0 ;
   m_ltail = 0;
   m_lsize = lsize;
@@ -24,68 +26,6 @@ ROB_Latch::~ROB_Latch() {
   delete [] lbuf_prev;
   delete [] Afwd; 
 
-}
-
-///TODO CHANGE
-void ROB_Latch::run (ins_t ins[])
-{
-  cout << "In circular class run method: " << endl;
-
-  int cycles = 0;
-  int ins_num = 0;
-
-  // NOTE: During each cycle, everything happens in parallel. So in this loop,
-  // be careful of how variable changes may affect this.
-  while (1)
-    {
-      pre_cycle_power_snapshot();
-      uint32_t old_head = m_head;
-      bool old_empty = m_empty;
-
-      p_perCycleBitTransitions = 0;
-      p_perCycleBitTransitionsHigh = 0;
-      p_perCycleBitTransitionsLow = 0;
-      p_perCycleBitsRemainedLow = 0;
-      p_perCycleBitsRemainedHigh = 0;
-
-      update_entries ();
-      write_to_arf ();
-      ins_num = read_from_iq (old_head, old_empty, ins_num, ins);
-
-      // TODO: Count the read ports being driven for operands.
-      // Get percentage this happens from Henry.
-
-      post_cycle_power_tabulation();
-
-      cycles++;
-      cout << "Cycles: " << cycles << endl;
-      cout << "Head: " << m_head << endl;
-      cout << "Tail: " << m_tail << endl;
-      cout << "Empty: " << m_empty << endl;
-      cout << "Write to ARF: " << m_nwarf << endl;
-      cout << "Read from IQ: " << m_nriq << endl;
-      cout << "Read from EX: " << m_nrex << endl;
-
-      cout << "# Total Bits in ROB: " << p_bit_count << endl;
-      cout << "# Bits Transitioned to High: " << p_perCycleBitTransitionsHigh << endl;
-      cout << "# Bits Transitioned to Low: " << p_perCycleBitTransitionsLow << endl;
-      cout << "# Bits Remained High: " << p_perCycleBitsRemainedHigh << endl;
-      cout << "# Bits Remained Low: " << p_perCycleBitsRemainedLow << endl << endl;
-
-      p_totalBitTransitions += p_perCycleBitTransitions;
-      p_totalBitTransitionsHigh += p_perCycleBitTransitionsHigh;
-      p_totalBitTransitionsLow += p_perCycleBitTransitionsLow;
-      p_totalBitsRemainedLow += p_perCycleBitsRemainedLow;
-      p_totalBitsRemainedHigh += p_perCycleBitsRemainedHigh;
-
-      // Break when we've written all the instructions.
-      if (m_empty && ins[ins_num].type == -1)
-        break;
-    }
-
-  print_power_stats(cycles);
-
-  cout << "Simulation complete." << endl;
 }
 
 
@@ -109,6 +49,8 @@ void ROB_Latch::write_to_arf ()
               // If valid, commit it.
               if (m_buf[m_head].isfp)
 								m++;
+              if (Afwd[m_head])
+                fwdcnt++;
 							cout << "Write from " << m_head << endl;
               m_head = (m_head + 1) % m_size;
               nwritten++;

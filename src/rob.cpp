@@ -29,6 +29,7 @@ ROB::ROB (int s, int in, int fn)
 ROB::~ROB ()
 {
   delete [] m_buf;
+  delete [] m_prev_buf;
 }
 
 void ROB::run (ins_t instructions[])

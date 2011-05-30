@@ -15,7 +15,6 @@ class ROB_Latch : public ROB_Circ {
  public:
   ROB_Latch (int s, int in, int fn, int lsize);
   virtual ~ROB_Latch();
-  virtual void run (ins_t instructions[]);
 
  protected:
     int m_lhead;
@@ -25,6 +24,8 @@ class ROB_Latch : public ROB_Circ {
     bool* Afwd;
     lentry* lbuf;
     lentry* lbuf_prev;
+
+    uint32_t fwdcnt;
 
 
   void write_to_arf ();
