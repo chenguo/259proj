@@ -14,22 +14,30 @@ typedef struct lentry {
 class ROB_Latch : public ROB_Circ {
  public:
   ROB_Latch (int s, int in, int fn, int lsize);
+    void run (ins_t ins[]);
   virtual ~ROB_Latch();
 
  protected:
-    int m_lhead;
-    int m_ltail;
-    int m_lsize;
+    uint32_t m_lhead;
+    uint32_t m_ltail;
+    uint32_t m_lsize;
     
     bool* Afwd;
+    bool* Afwd_prev;
     lentry* lbuf;
     lentry* lbuf_prev;
-
+    
+    void ReadinROB(uint16_t reg);
+    bool ReadinLatch(uint16_t reg);
     uint32_t fwdcnt;
 
+    void  update_entries ();
 
-  void write_to_arf ();
-  int read_from_iq (uint32_t, bool, int, ins_t[]);
+    void addToLatch(uint16_t reg, uint32_t data, bool fp);
+
+
+    void write_to_arf ();
+    void write_entry (entry *entry, ins_t ins);
 
   void pre_cycle_power_snapshot();
   void post_cycle_power_tabulation();

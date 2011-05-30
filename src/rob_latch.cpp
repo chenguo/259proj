@@ -18,6 +18,7 @@ ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize)
   lbuf = new lentry[lsize];
   lbuf_prev = new lentry[lsize];
   Afwd = new bool[s];
+  Afwd = new bool[s];
 }
 
 
@@ -25,11 +26,35 @@ ROB_Latch::~ROB_Latch() {
   delete [] lbuf;
   delete [] lbuf_prev;
   delete [] Afwd; 
+  delete [] Afwd_prev;
 
 }
 
+//chage add to latch
+void ROB_Latch::update_entries ()
+{
+  if (m_empty)
+    return;
 
-//TODO CHANGE
+  uint32_t i = m_head;
+  do
+    {
+      entry_t *entry = get_entry (i);
+      if (entry->cycles && --entry->cycles == 0)
+        {
+          cout << "Got result " << i << endl;
+          entry->valid = true;
+          m_nbiton = bits_on (true, false);
+          addToLatch(entry->reg_id, entry->result, entry->isfp);
+
+          m_nrex++;
+        }
+      i = ptr_incr (i);
+    }
+  while (i != m_tail);
+}
+
+//change fwdcnt
 // From the head pointer, commit up to m_n instructions to the ARF.
 void ROB_Latch::write_to_arf ()
 {
@@ -68,109 +93,27 @@ void ROB_Latch::write_to_arf ()
   m_nbiton = bits_on (m_head, m_head - nwritten);
 }
 
-//TODO CHANGE
+//changed read from tolatch
 // Read instructions from issue, up to m_n instructions.
-int ROB_Latch::read_from_iq (uint32_t old_head, bool old_empty,
-                            int ins_num, ins_t ins[])
+void ROB_Latch::write_entry (entry *entry, ins_t ins)
 {
-  uint32_t nread = 0;
-  int ileft = m_in; 
-  int fleft = m_fn;
-
   uint16_t reg_mask = 0xF;
-  // Read instructions from issue, if
-  // 1. Buffer is empty
-  // 2. Buffer is not empty, but head != tail
-  //    (buffer is full if !empty and head == tail)
-  // 3. Instruction sequence isn't over (denoted by -1 type)
-  if ((old_empty || (old_head != m_tail))
-      && ins[ins_num].type != -1)
-    {
-      do
-        {
-          cout << "Read into " << m_tail << endl;
-          // Write entry.
 
-					//fp ins
-          if (ins[ins_num].type>=FADD)
-          {
-						//2slots left
-						if( ((m_tail+1)%m_size)!= m_head  && fleft >0 )
-						{
-							 cout<<"FP ins processed"<<endl;
-							 //first entry
-         			 m_buf[m_tail].valid = false;
-         			 m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-      				 m_buf[m_tail].pc = ins[ins_num].pc;
-          		 m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-							 m_buf[m_tail].isfp = true;
-              
-               fleft--;
-               m_tail = (m_tail + 1) % m_size;
+  entry->valid = false;
+  entry->cycles = ins_cyc[ins.type];
+  if (ins.type >= FADD)
+    entry->cycles += m_fp_delay;
+  entry->pc = ins.pc;
+  entry->reg_id = ins.regs & reg_mask;
+  entry->isfp = (ins.type >= FADD);
 
-               if(isinROB( (ins[ins_num].regs>>4)&reg_mask  ))
-                  m_nwdu++;
-               if(isinROB( (ins[ins_num].regs>>8)&reg_mask   ))
-                  m_nwdu++;
+  m_tail = ptr_incr (m_tail);
 
-							 //will add second entry below
-						}
-						else{
-							cout<<"no space for a FP.. should skip to next ins"<<endl;
-						}
-					}
-          else
-          {
-            //fp used for X integer ins
-            if(ileft <=0 && fleft> 0)
-            {
-              ileft += 2;
-              fleft--;
-             }
-          
-             //break if no more spots for interger ops
-             if(ileft==0)
-             {
-                break;
-              }
-          }
-
-					//see below
-//					entry_t old_entry = m_buf[m_tail];
-
-          m_buf[m_tail].valid = false;
-          m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-          m_buf[m_tail].pc = ins[ins_num].pc;
-          m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-				  m_buf[m_tail].isfp=false;
-
-         if(isinROB( (ins[ins_num].regs>>4)&reg_mask   ))
-            m_nwdu++;
-         if(isinROB( (ins[ins_num].regs>>8)&reg_mask  ))
-            m_nwdu++;
-					
-
-          m_tail = (m_tail + 1) % m_size;
-          ins_num++;
-          nread++;
-
-          // Count bits turned on.
-					//TODO: we probably dont need this cause alex is
-					//check pointing the states per cycle
-//          m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
-//          m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
-        }
-      while (m_tail != old_head && nread < m_n && ins[ins_num].type != -1 );
-
-      m_empty = false;
-      m_nriq += nread;
-    }
-  // Process tail pointer bit flips.
-  m_nbiton += bits_on (m_tail, m_tail - nread);
-  return ins_num;
+  ReadinROB ((ins.regs >> 4) & reg_mask);
+  ReadinROB ((ins.regs >> 8) & reg_mask);
 }
 
-//TODO CHANGE
+//TODO CHANGE add stuff
 void ROB_Latch::post_cycle_power_tabulation () {
   if(m_prev_head != m_head)
     cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
@@ -236,6 +179,112 @@ void ROB_Latch::pre_cycle_power_snapshot () {
     m_prev_buf[i].reg_id = m_buf[i].reg_id;
     m_prev_buf[i].result = m_buf[i].result;
   }
+}
+
+void ROB_Latch::ReadinROB(uint16_t reg)
+{
+
+  if (!m_empty)
+    {
+      uint32_t i = m_head;
+      do
+        {
+          p_reg_comp_used++;
+          if ( (m_buf[i].reg_id == reg)  && ! ReadinLatch(reg)  )
+            Afwd[i] = true;
+          i = (i + 1) % m_size;
+        }
+      while (i != m_tail);
+    }
+}
+
+
+bool ROB_Latch::ReadinLatch(uint16_t reg)
+{
+  if (m_lhead!= m_ltail )
+    {
+      uint32_t i = m_lhead;
+      do
+        {
+          p_reg_comp_used++;
+          if (lbuf[i].reg_id == reg )
+          {
+            if (lbuf[i].isfp)
+              m_nwdu++;
+            m_nwdu++;
+            return true;
+          }          
+          i = (i + 1) % m_lsize;
+        }
+      while (i != m_ltail);
+    }
+    return false;
+}
+
+void ROB_Latch::addToLatch(uint16_t reg, uint32_t data, bool fp)
+{
+  //if full get rid of the head
+  if(m_lhead == m_ltail)
+  {
+    m_lhead = ( m_lhead+1)%m_lsize;
+  }  
+
+  lbuf[m_ltail].data = data;
+  lbuf[m_ltail].reg_id = reg;
+  lbuf[m_ltail].isfp = fp;
+
+  m_ltail = ( m_ltail+1)%m_lsize;
+
+}
+
+
+
+void ROB_Latch::run (ins_t ins[])
+{
+  cout << "In circular class run method: " << endl;
+
+  int cycles = 0;
+  int ins_num = 0;
+
+  // NOTE: During each cycle, everything happens in parallel. So in this loop,
+  // be careful of how variable changes may affect this.
+  while (1)
+    {
+      pre_cycle_power_snapshot();
+      bool old_empty = m_empty;
+
+      p_perCycleBitTransitions = 0;
+      p_perCycleBitTransitionsHigh = 0;
+      p_perCycleBitTransitionsLow = 0;
+      p_perCycleBitsRemainedLow = 0;
+      p_perCycleBitsRemainedHigh = 0;
+
+      update_entries ();
+      write_to_arf ();
+      ins_num = read_from_iq (old_empty, ins_num, ins);
+
+      // TODO: Count the read ports being driven for operands.
+      // Get percentage this happens from Henry.
+
+      post_cycle_power_tabulation();
+
+      cycles++;
+      print_msgs (cycles);
+
+      p_totalBitTransitions += p_perCycleBitTransitions;
+      p_totalBitTransitionsHigh += p_perCycleBitTransitionsHigh;
+      p_totalBitTransitionsLow += p_perCycleBitTransitionsLow;
+      p_totalBitsRemainedLow += p_perCycleBitsRemainedLow;
+      p_totalBitsRemainedHigh += p_perCycleBitsRemainedHigh;
+
+      // Break when we've written all the instructions.
+      if (m_empty && ins[ins_num].type == -1)
+        break;
+    }
+
+  print_power_stats(cycles);
+
+  cout << "Simulation complete." << endl;
 }
 
 
