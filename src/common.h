@@ -7,6 +7,8 @@
 #define PC_SIZE 32
 #define DATA_SIZE 32
 
+#define P_DEBUG
+
 // ROB entry.
 typedef struct entry {
   bool valid; //1 is valid
