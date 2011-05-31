@@ -124,9 +124,6 @@ void ROB_Circ::write_to_arf ()
   // If buffer is emty now, set the flag.
   if (m_head == m_tail && nwritten)
     m_empty = true;
-
-  // Process head pointer bit flips.
-  //m_nbiton = bits_on (m_head, m_head - nwritten);
 }
 
 // Read instructions from issue, up to m_n instructions.
@@ -167,10 +164,8 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
                   break;
                 }
             }
-
           write_entry (get_entry (m_tail), ins[ins_num]);
           nentries++;
-
           nread++;
           ins_num++;
         }
@@ -304,9 +299,10 @@ bool ROB_Circ::isinROB( uint16_t reg)
       do
         {
           p_reg_comp_used++;
-          if (m_buf[i].reg_id == reg)
+          entry_t *entry = get_entry (i);
+          if (entry->reg_id == reg)
             return true;
-          i = (i + 1) % m_size;
+          i = ptr_incr (i);
         }
       while (i != m_tail);
     }
