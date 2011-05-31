@@ -12,7 +12,7 @@ ROB_Circ::ROB_Circ (int s, int in, int fn) : ROB (s, in, fn)
   m_tail = 0;
   m_empty = true;
   m_head_size = (uint32_t)((log(m_size) / log(2))+1);
-  p_bit_count = (69*m_size + 2*m_head_size);
+  p_bit_count += (2*m_head_size);
 }
 
 
@@ -47,15 +47,11 @@ void ROB_Circ::run (ins_t ins[])
       // Get percentage this happens from Henry.
 
       post_cycle_power_tabulation();
+      update_power_totals();
 
       cycles++;
       print_msgs (cycles);
 
-      p_totalBitTransitions += p_perCycleBitTransitions;
-      p_totalBitTransitionsHigh += p_perCycleBitTransitionsHigh;
-      p_totalBitTransitionsLow += p_perCycleBitTransitionsLow;
-      p_totalBitsRemainedLow += p_perCycleBitsRemainedLow;
-      p_totalBitsRemainedHigh += p_perCycleBitsRemainedHigh;
 
       // Break when we've written all the instructions.
       if (m_empty && ins[ins_num].type == -1)
@@ -218,81 +214,42 @@ void ROB_Circ::write_entry (entry *entry, ins_t ins)
     m_nwdu++;
 }
 
+void ROB_Circ::update_power_totals () {
+  default_update_power_totals();
+}
+
 void ROB_Circ::post_cycle_power_tabulation () {
+#ifdef P_DEBUG
   if(m_prev_head != m_head)
     cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
+#endif
   p_perCycleBitTransitions += num_trans(m_prev_head, m_head, m_head_size);
   p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_head, m_head, m_head_size);
   p_perCycleBitTransitionsLow += num_lo_trans(m_prev_head, m_head, m_head_size);
   p_perCycleBitsRemainedHigh += num_hi(m_head,m_head_size) - num_hi_trans(m_prev_head, m_head, m_head_size);
   p_perCycleBitsRemainedLow += m_head_size - num_hi(m_head,m_head_size) - num_lo_trans(m_prev_head, m_head, m_head_size);
 
+#ifdef P_DEBUG
   if(m_prev_tail != m_tail)
     cout << "*TRANSITION* m_tail: " << m_prev_tail << "->" << m_tail << endl;
+#endif
   p_perCycleBitTransitions += num_trans(m_prev_tail, m_tail, m_head_size);
   p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_tail, m_tail, m_head_size);
   p_perCycleBitTransitionsLow += num_lo_trans(m_prev_tail, m_tail, m_head_size);
   p_perCycleBitsRemainedHigh += num_hi(m_tail, m_head_size) - num_hi_trans(m_prev_tail, m_tail, m_head_size);
   p_perCycleBitsRemainedLow += m_head_size - num_hi(m_tail, m_head_size) - num_lo_trans(m_prev_tail, m_tail, m_head_size);
 
-  uint32_t i;
-  for(i = 0; i < m_size; i++) {
-    if(m_prev_buf[i].valid != m_buf[i].valid)
-      cout << "*TRANSITION* m_buf[" << i << "].valid: " << m_prev_buf[i].valid << "->" << m_buf[i].valid << endl;
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].valid, 1) - num_hi_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(m_buf[i].valid, 1) - num_lo_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-
-    if(m_prev_buf[i].pc != m_buf[i].pc)
-      cout << "*TRANSITION* m_buf[" << i << "].pc: " << m_prev_buf[i].pc << "->" << m_buf[i].pc << endl;
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].pc, 32) - num_hi_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].pc, 32) - num_lo_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-
-    if(m_prev_buf[i].reg_id != m_buf[i].reg_id)
-      cout << "*TRANSITION* m_buf[" << i << "].reg_id: " << m_prev_buf[i].reg_id << "->" << m_buf[i].reg_id << endl;
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].reg_id, 4) - num_hi_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(m_buf[i].reg_id, 4) - num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-
-    if(m_prev_buf[i].result != m_buf[i].result)
-      cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl;
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].result, 32) - num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].result, 32) - num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-  }
+  default_post_cycle_power_tabulation();
 }
 
 void ROB_Circ::pre_cycle_power_snapshot () {
   m_prev_head = m_head;
   m_prev_tail = m_tail;
-  uint32_t i;
-  for(i = 0; i < m_size; i++) {
-    m_prev_buf[i].valid = m_buf[i].valid;
-    m_prev_buf[i].cycles = m_buf[i].cycles;
-    m_prev_buf[i].pc = m_buf[i].pc;
-    m_prev_buf[i].reg_id = m_buf[i].reg_id;
-    m_prev_buf[i].result = m_buf[i].result;
-  }
+  default_pre_cycle_power_snapshot();
 }
 
 void ROB_Circ::print_power_stats (int cycles) {
-  cout << endl;
-  cout << "Power statistics from the run:" << endl;
-  cout << "Total # bits = num_cycles * # bits in ROB = " << cycles << "*" << p_bit_count << " = " << ((uint32_t)cycles)*p_bit_count << endl;
-  cout << "Total # bit transitions to high: " << p_totalBitTransitionsHigh << endl;
-  cout << "Total # bit transitions to low: " << p_totalBitTransitionsLow << endl;
-  cout << "Total # bits remained low: " << p_totalBitsRemainedLow << endl;
-  cout << "Total # bits remained high: " << p_totalBitsRemainedHigh << endl;
-  cout << endl;
+  default_print_power_stats(cycles);
 }
 
 

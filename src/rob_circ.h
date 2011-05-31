@@ -27,7 +27,7 @@ class ROB_Circ : public ROB {
   void pre_cycle_power_snapshot();
   void post_cycle_power_tabulation();
   void print_power_stats (int cycles);
-
+  void update_power_totals();
 
 
   uint32_t m_head;
@@ -36,7 +36,6 @@ class ROB_Circ : public ROB {
   uint32_t m_prev_head;
   uint32_t m_prev_tail;
 
-  uint32_t p_bit_count;
   uint32_t m_head_size;
 
 
