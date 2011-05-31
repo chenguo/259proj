@@ -13,6 +13,11 @@ class ROB {
 
   int get_max_size() {return m_size;};
   int get_n() {return m_n;};
+  void default_pre_cycle_power_snapshot();
+  void default_post_cycle_power_tabulation();
+  void default_print_power_stats (int cycles);
+  void default_update_power_totals ();
+
  protected:
   uint32_t m_size;
   entry_t *m_buf;
@@ -57,6 +62,8 @@ class ROB {
   int p_totalBitTransitionsLow;
   int p_totalBitsRemainedHigh;
   int p_totalBitsRemainedLow;
+
+  int p_bit_count;
 
   int p_reg_comp_used; 
 };

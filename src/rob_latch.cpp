@@ -18,6 +18,7 @@ ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize)
   lbuf = new lentry[lsize];
   lbuf_prev = new lentry[lsize];
   Afwd = new bool[s];
+  Afwd_prev = new bool[s];
 }
 
 
@@ -25,11 +26,35 @@ ROB_Latch::~ROB_Latch() {
   delete [] lbuf;
   delete [] lbuf_prev;
   delete [] Afwd; 
+  delete [] Afwd_prev;
 
 }
 
+//chage add to latch
+void ROB_Latch::update_entries ()
+{
+  if (m_empty)
+    return;
 
-//TODO CHANGE
+  uint32_t i = m_head;
+  do
+    {
+      entry_t *entry = get_entry (i);
+      if (entry->cycles && --entry->cycles == 0)
+        {
+          cout << "Got result " << i << endl;
+          entry->valid = true;
+          m_nbiton = bits_on (true, false);
+          addToLatch(entry->reg_id, entry->result, entry->isfp);
+
+          m_nrex++;
+        }
+      i = ptr_incr (i);
+    }
+  while (i != m_tail);
+}
+
+//change fwdcnt
 // From the head pointer, commit up to m_n instructions to the ARF.
 void ROB_Latch::write_to_arf ()
 {
@@ -52,6 +77,7 @@ void ROB_Latch::write_to_arf ()
               if (Afwd[m_head])
                 fwdcnt++;
 							cout << "Write from " << m_head << endl;
+							Afwd[m_head] = false;
               m_head = (m_head + 1) % m_size;
               nwritten++;
             }
@@ -68,111 +94,64 @@ void ROB_Latch::write_to_arf ()
   m_nbiton = bits_on (m_head, m_head - nwritten);
 }
 
-//TODO CHANGE
+//changed read from tolatch
 // Read instructions from issue, up to m_n instructions.
-int ROB_Latch::read_from_iq (uint32_t old_head, bool old_empty,
-                            int ins_num, ins_t ins[])
+void ROB_Latch::write_entry (entry *entry, ins_t ins)
 {
-  uint32_t nread = 0;
-  int ileft = m_in; 
-  int fleft = m_fn;
-
   uint16_t reg_mask = 0xF;
-  // Read instructions from issue, if
-  // 1. Buffer is empty
-  // 2. Buffer is not empty, but head != tail
-  //    (buffer is full if !empty and head == tail)
-  // 3. Instruction sequence isn't over (denoted by -1 type)
-  if ((old_empty || (old_head != m_tail))
-      && ins[ins_num].type != -1)
-    {
-      do
-        {
-          cout << "Read into " << m_tail << endl;
-          // Write entry.
 
-					//fp ins
-          if (ins[ins_num].type>=FADD)
-          {
-						//2slots left
-						if( ((m_tail+1)%m_size)!= m_head  && fleft >0 )
-						{
-							 cout<<"FP ins processed"<<endl;
-							 //first entry
-         			 m_buf[m_tail].valid = false;
-         			 m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-      				 m_buf[m_tail].pc = ins[ins_num].pc;
-          		 m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-							 m_buf[m_tail].isfp = true;
-              
-               fleft--;
-               m_tail = (m_tail + 1) % m_size;
+  entry->valid = false;
+  entry->cycles = ins_cyc[ins.type];
+  if (ins.type >= FADD)
+    entry->cycles += m_fp_delay;
+  entry->pc = ins.pc;
+  entry->reg_id = ins.regs & reg_mask;
+  entry->isfp = (ins.type >= FADD);
 
-               if(isinROB( (ins[ins_num].regs>>4)&reg_mask  ))
-                  m_nwdu++;
-               if(isinROB( (ins[ins_num].regs>>8)&reg_mask   ))
-                  m_nwdu++;
+  m_tail = ptr_incr (m_tail);
 
-							 //will add second entry below
-						}
-						else{
-							cout<<"no space for a FP.. should skip to next ins"<<endl;
-						}
-					}
-          else
-          {
-            //fp used for X integer ins
-            if(ileft <=0 && fleft> 0)
-            {
-              ileft += 2;
-              fleft--;
-             }
-          
-             //break if no more spots for interger ops
-             if(ileft==0)
-             {
-                break;
-              }
-          }
-
-					//see below
-//					entry_t old_entry = m_buf[m_tail];
-
-          m_buf[m_tail].valid = false;
-          m_buf[m_tail].cycles = ins_cyc[ins[ins_num].type];
-          m_buf[m_tail].pc = ins[ins_num].pc;
-          m_buf[m_tail].reg_id = ins[ins_num].regs&reg_mask;
-				  m_buf[m_tail].isfp=false;
-
-         if(isinROB( (ins[ins_num].regs>>4)&reg_mask   ))
-            m_nwdu++;
-         if(isinROB( (ins[ins_num].regs>>8)&reg_mask  ))
-            m_nwdu++;
-					
-
-          m_tail = (m_tail + 1) % m_size;
-          ins_num++;
-          nread++;
-
-          // Count bits turned on.
-					//TODO: we probably dont need this cause alex is
-					//check pointing the states per cycle
-//          m_nbiton += bits_on (m_buf[m_tail].pc, old_entry.pc);
-//          m_nbiton += bits_on (m_buf[m_tail].reg_id, old_entry.reg_id);
-        }
-      while (m_tail != old_head && nread < m_n && ins[ins_num].type != -1 );
-
-      m_empty = false;
-      m_nriq += nread;
-    }
-  // Process tail pointer bit flips.
-  m_nbiton += bits_on (m_tail, m_tail - nread);
-  return ins_num;
+  ReadinROB ((ins.regs >> 4) & reg_mask);
+  ReadinROB ((ins.regs >> 8) & reg_mask);
 }
 
-//TODO CHANGE
+//TODO CHANGE add stuff
 void ROB_Latch::post_cycle_power_tabulation () {
-  if(m_prev_head != m_head)
+	ROB_Circ::post_cycle_power_tabulation();
+
+  uint32_t i;
+  for(i = 0; i < m_size; i++) {  
+    p_perCycleBitTransitions += num_trans(Afwd_prev[i], Afwd[i], 1);
+    p_perCycleBitTransitionsHigh += num_hi_trans(Afwd_prev[i], Afwd[i], 1);
+    p_perCycleBitTransitionsLow += num_lo_trans(Afwd_prev[i],Afwd[i], 1);
+    p_perCycleBitsRemainedHigh += num_hi(Afwd[i], 1) - num_hi_trans(Afwd_prev[i], Afwd[i], 1);
+    p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(Afwd[i], 1) - num_lo_trans(Afwd_prev[i], Afwd[i], 1);
+	}
+
+
+  for(i = 0; i < m_lsize; i++) {  
+		p_perCycleBitTransitions += num_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+    p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].data,lbuf[i].data, 32);
+ 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].data, 32) - num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+ 	  p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(lbuf[i].data, 32) - num_lo_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+
+		p_perCycleBitTransitions += num_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+    p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+ 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].reg_id, 4) - num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+ 	  p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(lbuf[i].reg_id, 4) - num_lo_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+
+		p_perCycleBitTransitions += num_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+    p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+ 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].isfp, 1) - num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+ 	  p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(lbuf[i].isfp, 1) - num_lo_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+
+	}
+
+
+
+/*  if(m_prev_head != m_head)
     cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
   p_perCycleBitTransitions += num_trans(m_prev_head, m_head, m_head_size);
   p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_head, m_head, m_head_size);
@@ -222,10 +201,27 @@ void ROB_Latch::post_cycle_power_tabulation () {
     p_perCycleBitsRemainedHigh += num_hi(m_buf[i].result, 32) - num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].result, 32) - num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
   }
+*/
+
 }
 
 //TODO CHANGE
 void ROB_Latch::pre_cycle_power_snapshot () {
+	ROB_Circ::pre_cycle_power_snapshot();
+	for (uint32_t i = 0; i<m_lsize; i++)
+	{
+		lbuf_prev[i].data = lbuf[i].data;
+		lbuf_prev[i].reg_id = lbuf[i].reg_id;
+		lbuf_prev[i].isfp = lbuf[i].isfp;
+	}
+
+  for (uint32_t i = 0; i<m_size; i++)
+	{
+		Afwd_prev[i] = Afwd[i];
+	}
+
+
+/*
   m_prev_head = m_head;
   m_prev_tail = m_tail;
   uint32_t i;
@@ -236,6 +232,66 @@ void ROB_Latch::pre_cycle_power_snapshot () {
     m_prev_buf[i].reg_id = m_buf[i].reg_id;
     m_prev_buf[i].result = m_buf[i].result;
   }
+*/
 }
+
+void ROB_Latch::ReadinROB(uint16_t reg)
+{
+
+  if (!m_empty)
+    {
+      uint32_t i = m_head;
+      do
+        {
+          p_reg_comp_used++;
+          if ( (m_buf[i].reg_id == reg)  && ! ReadinLatch(reg)  )
+            Afwd[i] = true;
+          i = (i + 1) % m_size;
+        }
+      while (i != m_tail);
+    }
+}
+
+
+bool ROB_Latch::ReadinLatch(uint16_t reg)
+{
+  if (m_lhead!= m_ltail )
+    {
+      uint32_t i = m_lhead;
+      do
+        {
+          p_reg_comp_used++;
+          if (lbuf[i].reg_id == reg )
+          {
+            if (lbuf[i].isfp)
+              m_nwdu++;
+            m_nwdu++;
+            return true;
+          }          
+          i = (i + 1) % m_lsize;
+        }
+      while (i != m_ltail);
+    }
+    return false;
+}
+
+void ROB_Latch::addToLatch(uint16_t reg, uint32_t data, bool fp)
+{
+  //if full get rid of the head
+  if(m_lhead == m_ltail)
+  {
+    m_lhead = ( m_lhead+1)%m_lsize;
+  }  
+
+  lbuf[m_ltail].data = data;
+  lbuf[m_ltail].reg_id = reg;
+  lbuf[m_ltail].isfp = fp;
+
+  m_ltail = ( m_ltail+1)%m_lsize;
+
+}
+
+
+
 
 
