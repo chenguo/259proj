@@ -18,7 +18,7 @@ ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize)
   lbuf = new lentry[lsize];
   lbuf_prev = new lentry[lsize];
   Afwd = new bool[s];
-  Afwd = new bool[s];
+  Afwd_prev = new bool[s];
 }
 
 
@@ -77,6 +77,7 @@ void ROB_Latch::write_to_arf ()
               if (Afwd[m_head])
                 fwdcnt++;
 							cout << "Write from " << m_head << endl;
+							Afwd[m_head] = false;
               m_head = (m_head + 1) % m_size;
               nwritten++;
             }
@@ -115,7 +116,42 @@ void ROB_Latch::write_entry (entry *entry, ins_t ins)
 
 //TODO CHANGE add stuff
 void ROB_Latch::post_cycle_power_tabulation () {
-  if(m_prev_head != m_head)
+	ROB_Circ::post_cycle_power_tabulation();
+
+  uint32_t i;
+  for(i = 0; i < m_size; i++) {  
+    p_perCycleBitTransitions += num_trans(Afwd_prev[i], Afwd[i], 1);
+    p_perCycleBitTransitionsHigh += num_hi_trans(Afwd_prev[i], Afwd[i], 1);
+    p_perCycleBitTransitionsLow += num_lo_trans(Afwd_prev[i],Afwd[i], 1);
+    p_perCycleBitsRemainedHigh += num_hi(Afwd[i], 1) - num_hi_trans(Afwd_prev[i], Afwd[i], 1);
+    p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(Afwd[i], 1) - num_lo_trans(Afwd_prev[i], Afwd[i], 1);
+	}
+
+
+  for(i = 0; i < m_lsize; i++) {  
+		p_perCycleBitTransitions += num_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+    p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].data,lbuf[i].data, 32);
+ 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].data, 32) - num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+ 	  p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(lbuf[i].data, 32) - num_lo_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+
+		p_perCycleBitTransitions += num_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+    p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+ 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].reg_id, 4) - num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+ 	  p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(lbuf[i].reg_id, 4) - num_lo_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+
+		p_perCycleBitTransitions += num_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+    p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+ 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].isfp, 1) - num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+ 	  p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(lbuf[i].isfp, 1) - num_lo_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+
+	}
+
+
+
+/*  if(m_prev_head != m_head)
     cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
   p_perCycleBitTransitions += num_trans(m_prev_head, m_head, m_head_size);
   p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_head, m_head, m_head_size);
@@ -165,10 +201,27 @@ void ROB_Latch::post_cycle_power_tabulation () {
     p_perCycleBitsRemainedHigh += num_hi(m_buf[i].result, 32) - num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].result, 32) - num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
   }
+*/
+
 }
 
 //TODO CHANGE
 void ROB_Latch::pre_cycle_power_snapshot () {
+	ROB_Circ::pre_cycle_power_snapshot();
+	for (uint32_t i = 0; i<m_lsize; i++)
+	{
+		lbuf_prev[i].data = lbuf[i].data;
+		lbuf_prev[i].reg_id = lbuf[i].reg_id;
+		lbuf_prev[i].isfp = lbuf[i].isfp;
+	}
+
+  for (uint32_t i = 0; i<m_size; i++)
+	{
+		Afwd_prev[i] = Afwd[i];
+	}
+
+
+/*
   m_prev_head = m_head;
   m_prev_tail = m_tail;
   uint32_t i;
@@ -179,6 +232,7 @@ void ROB_Latch::pre_cycle_power_snapshot () {
     m_prev_buf[i].reg_id = m_buf[i].reg_id;
     m_prev_buf[i].result = m_buf[i].result;
   }
+*/
 }
 
 void ROB_Latch::ReadinROB(uint16_t reg)
@@ -239,52 +293,5 @@ void ROB_Latch::addToLatch(uint16_t reg, uint32_t data, bool fp)
 
 
 
-void ROB_Latch::run (ins_t ins[])
-{
-  cout << "In circular class run method: " << endl;
-
-  int cycles = 0;
-  int ins_num = 0;
-
-  // NOTE: During each cycle, everything happens in parallel. So in this loop,
-  // be careful of how variable changes may affect this.
-  while (1)
-    {
-      pre_cycle_power_snapshot();
-      bool old_empty = m_empty;
-
-      p_perCycleBitTransitions = 0;
-      p_perCycleBitTransitionsHigh = 0;
-      p_perCycleBitTransitionsLow = 0;
-      p_perCycleBitsRemainedLow = 0;
-      p_perCycleBitsRemainedHigh = 0;
-
-      update_entries ();
-      write_to_arf ();
-      ins_num = read_from_iq (old_empty, ins_num, ins);
-
-      // TODO: Count the read ports being driven for operands.
-      // Get percentage this happens from Henry.
-
-      post_cycle_power_tabulation();
-
-      cycles++;
-      print_msgs (cycles);
-
-      p_totalBitTransitions += p_perCycleBitTransitions;
-      p_totalBitTransitionsHigh += p_perCycleBitTransitionsHigh;
-      p_totalBitTransitionsLow += p_perCycleBitTransitionsLow;
-      p_totalBitsRemainedLow += p_perCycleBitsRemainedLow;
-      p_totalBitsRemainedHigh += p_perCycleBitsRemainedHigh;
-
-      // Break when we've written all the instructions.
-      if (m_empty && ins[ins_num].type == -1)
-        break;
-    }
-
-  print_power_stats(cycles);
-
-  cout << "Simulation complete." << endl;
-}
 
 

@@ -14,7 +14,6 @@ typedef struct lentry {
 class ROB_Latch : public ROB_Circ {
  public:
   ROB_Latch (int s, int in, int fn, int lsize);
-    void run (ins_t ins[]);
   virtual ~ROB_Latch();
 
  protected:
