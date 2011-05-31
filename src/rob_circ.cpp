@@ -39,12 +39,6 @@ void ROB_Circ::run (ins_t ins[])
       pre_cycle_power_snapshot();
       bool old_empty = m_empty;
 
-      p_perCycleBitTransitions = 0;
-      p_perCycleBitTransitionsHigh = 0;
-      p_perCycleBitTransitionsLow = 0;
-      p_perCycleBitsRemainedLow = 0;
-      p_perCycleBitsRemainedHigh = 0;
-
       update_entries ();
       write_to_arf ();
       ins_num = read_from_iq (old_empty, ins_num, ins);
@@ -87,7 +81,7 @@ void ROB_Circ::update_entries ()
           m_nbiton = bits_on (true, false);
           m_nrex++;
         }
-      i = ptr_incr (i);
+      i = head_incr (i);
     }
   while (i != m_tail);
 }
@@ -115,7 +109,7 @@ void ROB_Circ::write_to_arf ()
           if (entry->isfp)
             m++;
           cout << "Write from " << m_head << endl;
-          m_head = ptr_incr (m_head);
+          m_head = head_incr (m_head);
           nwritten++;
         }
     }
@@ -151,7 +145,7 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
           // FP instruction uses 2 slots.
           if (ins[ins_num].type >= FADD)
             {
-              if (ptr_incr (m_tail) != m_head)
+              if (tail_incr (m_tail) != m_head)
                 {
                   cout << "FP ins processed" << endl;
 
@@ -185,9 +179,16 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
   return ins_num;
 }
 
-uint32_t ROB_Circ::ptr_incr (uint32_t ptr)
+// Return the head pointer + 1.
+uint32_t ROB_Circ::head_incr (uint32_t head_ptr)
 {
-  return (ptr + 1) % m_size;
+  return (head_ptr + 1) % m_size;
+}
+
+// Return the tail pointer + 1.
+uint32_t ROB_Circ::tail_incr (uint32_t tail_ptr)
+{
+  return (tail_ptr + 1) % m_size;
 }
 
 entry_t *ROB_Circ::get_entry (uint32_t ptr)
@@ -207,7 +208,7 @@ void ROB_Circ::write_entry (entry *entry, ins_t ins)
   entry->reg_id = ins.regs & reg_mask;
   entry->isfp = (ins.type >= FADD);
 
-  m_tail = ptr_incr (m_tail);
+  m_tail = tail_incr (m_tail);
 
   if(isinROB ((ins.regs >> 4) & reg_mask))
     m_nwdu++;
@@ -246,6 +247,12 @@ void ROB_Circ::post_cycle_power_tabulation () {
 void ROB_Circ::pre_cycle_power_snapshot () {
   m_prev_head = m_head;
   m_prev_tail = m_tail;
+  p_perCycleBitTransitions = 0;
+  p_perCycleBitTransitionsHigh = 0;
+  p_perCycleBitTransitionsLow = 0;
+  p_perCycleBitsRemainedLow = 0;
+  p_perCycleBitsRemainedHigh = 0;
+
   default_pre_cycle_power_snapshot();
 }
 
@@ -265,7 +272,7 @@ bool ROB_Circ::isinROB( uint16_t reg)
           entry_t *entry = get_entry (i);
           if (entry->reg_id == reg)
             return true;
-          i = ptr_incr (i);
+          i = head_incr (i);
         }
       while (i != m_tail);
     }

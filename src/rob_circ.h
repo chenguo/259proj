@@ -19,7 +19,8 @@ class ROB_Circ : public ROB {
   void write_to_arf ();
   int read_from_iq (bool, int, ins_t[]);
 
-  virtual uint32_t ptr_incr (uint32_t ptr);
+  virtual uint32_t head_incr (uint32_t ptr);
+  virtual uint32_t tail_incr (uint32_t ptr);
   virtual entry_t *get_entry (uint32_t ptr);
   virtual void write_entry (entry_t *entry, ins_t ins);
   virtual void print_msgs (int cycles);

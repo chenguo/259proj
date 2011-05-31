@@ -4,8 +4,17 @@
 #include "rob_circ.h"
 using namespace std;
 
+enum {
+  // ENABLED and TO_DISABLE denotes partition is in use.
+  ENABLED,
+  TO_DISABLE,
+  // DISABLED and TO_ENABLE denotes partition is not in use.
+  DISABLED,
+  TO_ENABLE
+};
+
 typedef struct partition {
-  bool use;
+  int state;
   entry_t *buf;
 } part_t;
 
@@ -21,11 +30,15 @@ class ROB_Dyn : public ROB_Circ {
   int m_nparts;
   uint32_t m_part_size;
 
-  virtual uint32_t ptr_incr (uint32_t ptr);
+  virtual uint32_t head_incr (uint32_t ptr);
+  virtual uint32_t tail_incr (uint32_t ptr);
   virtual entry_t *get_entry (uint32_t ptr);
 
  private:
   void dyn_process (int cycles);
+  void dyn_shrink (int parts);
+  void dyn_grow (int parts);
+
   uint32_t m_update_period;
   uint32_t m_sample_period;
   uint32_t m_samples_taken;

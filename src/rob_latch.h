@@ -20,12 +20,12 @@ class ROB_Latch : public ROB_Circ {
     uint32_t m_lhead;
     uint32_t m_ltail;
     uint32_t m_lsize;
-    
+
     bool* Afwd;
     bool* Afwd_prev;
     lentry* lbuf;
     lentry* lbuf_prev;
-    
+
     void ReadinROB(uint16_t reg);
     bool ReadinLatch(uint16_t reg);
     uint32_t fwdcnt;

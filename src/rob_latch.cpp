@@ -49,7 +49,7 @@ void ROB_Latch::update_entries ()
 
           m_nrex++;
         }
-      i = ptr_incr (i);
+      i = head_incr (i);
     }
   while (i != m_tail);
 }
@@ -108,7 +108,7 @@ void ROB_Latch::write_entry (entry *entry, ins_t ins)
   entry->reg_id = ins.regs & reg_mask;
   entry->isfp = (ins.type >= FADD);
 
-  m_tail = ptr_incr (m_tail);
+  m_tail = tail_incr (m_tail);
 
   ReadinROB ((ins.regs >> 4) & reg_mask);
   ReadinROB ((ins.regs >> 8) & reg_mask);
