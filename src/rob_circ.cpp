@@ -13,6 +13,12 @@ ROB_Circ::ROB_Circ (int s, int in, int fn) : ROB (s, in, fn)
   m_empty = true;
   m_head_size = (uint32_t)((log(m_size) / log(2))+1);
   p_bit_count += (2*m_head_size);
+
+  cout << "New ROB_Circ:" << endl;
+  cout << "# Entries: " << m_size << endl;
+  cout << "Entry size: 70 bits" << endl;
+  cout << "Head and tail pointer bits: " << m_head_size << endl;
+  cout << "Total bits in ROB: " << p_bit_count << endl;
 }
 
 

@@ -24,7 +24,7 @@ ROB::ROB (int s, int in, int fn)
   p_totalBitsRemainedHigh = 0;
   p_totalBitsRemainedLow = 0;
   p_reg_comp_used = 0;
-  p_bit_count = (69*m_size); // 69 = PC[32] + RESULT[32] + REG_ID[4] + VALID[1]
+  p_bit_count = (70*m_size); // 70 = PC[32] + RESULT[32] + REG_ID[4] + VALID[1] + ISFP[1]
 }
 
 void ROB::default_post_cycle_power_tabulation() {
@@ -59,6 +59,7 @@ uint32_t i;
     p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
     p_perCycleBitsRemainedHigh += num_hi(m_buf[i].reg_id, 4) - num_hi_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
     p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(m_buf[i].reg_id, 4) - num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
+
 #ifdef P_DEBUG
     if(m_prev_buf[i].result != m_buf[i].result)
       cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl;
@@ -68,6 +69,16 @@ uint32_t i;
     p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitsRemainedHigh += num_hi(m_buf[i].result, 32) - num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].result, 32) - num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
+
+#ifdef P_DEBUG
+    if(m_prev_buf[i].isfp != m_buf[i].isfp)
+      cout << "*TRANSITION* m_buf[" << i << "].isfp: " << m_prev_buf[i].isfp << "->" << m_buf[i].isfp << endl;
+#endif
+    p_perCycleBitTransitions += num_trans(m_prev_buf[i].isfp, m_buf[i].isfp, 1);
+    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].isfp, m_buf[i].isfp, 1);
+    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].isfp, m_buf[i].isfp, 1);
+    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].isfp, 1) - num_hi_trans(m_prev_buf[i].isfp, m_buf[i].isfp, 1);
+    p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(m_buf[i].isfp, 1) - num_lo_trans(m_prev_buf[i].isfp, m_buf[i].isfp, 1);
   }
 }
 
@@ -87,6 +98,7 @@ void ROB::default_pre_cycle_power_snapshot() {
     m_prev_buf[i].pc = m_buf[i].pc;
     m_prev_buf[i].reg_id = m_buf[i].reg_id;
     m_prev_buf[i].result = m_buf[i].result;
+    m_prev_buf[i].isfp = m_buf[i].isfp;
   }
 }
 
