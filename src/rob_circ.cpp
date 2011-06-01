@@ -75,7 +75,7 @@ void ROB_Circ::update_entries ()
       entry_t *entry = get_entry (i);
       if (entry->cycles > 0 && --entry->cycles == 0)
         {
-          //cout << "Got result " << i << endl;
+          entry->result = rand ();
           entry->valid = true;
           m_nbiton = bits_on (true, false);
           m_nrex++;
@@ -107,7 +107,6 @@ void ROB_Circ::write_to_arf ()
         {
           if (entry->isfp)
             m++;
-          //cout << "Write from " << m_head << endl;
           m_head = head_incr (m_head);
           nwritten++;
         }
@@ -225,7 +224,6 @@ void ROB_Circ::pre_cycle_power_snapshot () {
 }
 
 void ROB_Circ::post_cycle_power_tabulation () {
-
   if((m_print & DBG_FLAG) && m_prev_head != m_head)
     cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
   p_perCycleBitTransitions += num_trans(m_prev_head, m_head, m_head_size);
@@ -284,6 +282,11 @@ void ROB_Circ::print_msgs (int cycles)
   //cout << "Head: " << m_head << endl;
   //cout << "Tail: " << m_tail << endl;
   //cout << "Empty: " << m_empty << endl;
+/*
+  cout << "Cycles: " << cycles << endl;
+  cout << "Head: " << m_head << endl;
+  cout << "Tail: " << m_tail << endl;
+  cout << "Empty: " << m_empty << endl;
   cout << "Write to ARF: " << m_nwarf << endl;
   cout << "Read from IQ: " << m_nriq << endl;
   cout << "Read from EX: " << m_nrex << endl;
@@ -294,4 +297,5 @@ void ROB_Circ::print_msgs (int cycles)
   cout << "# Bits Remained High: " << p_perCycleBitsRemainedHigh << endl;
   cout << "# Bits Remained Low: " << p_perCycleBitsRemainedLow << endl;
   cout << endl;
+*/
 }
