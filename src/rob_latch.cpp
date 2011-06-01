@@ -7,8 +7,8 @@ using namespace std;
 
 extern int ins_cyc[];
 
-ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize)
-  : ROB_Circ (s, in, fn)
+ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize, int pflags)
+  : ROB_Circ (s, in, fn, pflags)
 {
   fwdcnt = 0;
   m_lhead = 0 ;
@@ -25,7 +25,7 @@ ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize)
 ROB_Latch::~ROB_Latch() {
   delete [] lbuf;
   delete [] lbuf_prev;
-  delete [] Afwd; 
+  delete [] Afwd;
   delete [] Afwd_prev;
 
 }
@@ -73,11 +73,11 @@ void ROB_Latch::write_to_arf ()
             {
               // If valid, commit it.
               if (m_buf[m_head].isfp)
-								m++;
+                m++;
               if (Afwd[m_head])
                 fwdcnt++;
-							cout << "Write from " << m_head << endl;
-							Afwd[m_head] = false;
+              cout << "Write from " << m_head << endl;
+              Afwd[m_head] = false;
               m_head = (m_head + 1) % m_size;
               nwritten++;
             }
@@ -115,39 +115,39 @@ void ROB_Latch::write_entry (entry *entry, ins_t ins)
 }
 
 //TODO CHANGE add stuff
-void ROB_Latch::post_cycle_power_tabulation () {
-	ROB_Circ::post_cycle_power_tabulation();
+void ROB_Latch::post_cycle_power_tabulation() {
+  ROB_Circ::post_cycle_power_tabulation();
 
   uint32_t i;
-  for(i = 0; i < m_size; i++) {  
+  for(i = 0; i < m_size; i++) {
     p_perCycleBitTransitions += num_trans(Afwd_prev[i], Afwd[i], 1);
     p_perCycleBitTransitionsHigh += num_hi_trans(Afwd_prev[i], Afwd[i], 1);
     p_perCycleBitTransitionsLow += num_lo_trans(Afwd_prev[i],Afwd[i], 1);
     p_perCycleBitsRemainedHigh += num_hi(Afwd[i], 1) - num_hi_trans(Afwd_prev[i], Afwd[i], 1);
     p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(Afwd[i], 1) - num_lo_trans(Afwd_prev[i], Afwd[i], 1);
-	}
+  }
 
 
-  for(i = 0; i < m_lsize; i++) {  
-		p_perCycleBitTransitions += num_trans(lbuf_prev[i].data, lbuf[i].data, 32);
-  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+  for(i = 0; i < m_lsize; i++) {
+    p_perCycleBitTransitions += num_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+    p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
     p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].data,lbuf[i].data, 32);
- 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].data, 32) - num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
- 	  p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(lbuf[i].data, 32) - num_lo_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+    p_perCycleBitsRemainedHigh += num_hi(lbuf[i].data, 32) - num_hi_trans(lbuf_prev[i].data, lbuf[i].data, 32);
+    p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(lbuf[i].data, 32) - num_lo_trans(lbuf_prev[i].data, lbuf[i].data, 32);
 
-		p_perCycleBitTransitions += num_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
-  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+    p_perCycleBitTransitions += num_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+    p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
     p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
- 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].reg_id, 4) - num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
- 	  p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(lbuf[i].reg_id, 4) - num_lo_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+    p_perCycleBitsRemainedHigh += num_hi(lbuf[i].reg_id, 4) - num_hi_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
+    p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(lbuf[i].reg_id, 4) - num_lo_trans(lbuf_prev[i].reg_id, lbuf[i].reg_id, 4);
 
-		p_perCycleBitTransitions += num_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
-  	p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+    p_perCycleBitTransitions += num_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+    p_perCycleBitTransitionsHigh += num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
     p_perCycleBitTransitionsLow += num_lo_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
- 	  p_perCycleBitsRemainedHigh += num_hi(lbuf[i].isfp, 1) - num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
- 	  p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(lbuf[i].isfp, 1) - num_lo_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+    p_perCycleBitsRemainedHigh += num_hi(lbuf[i].isfp, 1) - num_hi_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
+    p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(lbuf[i].isfp, 1) - num_lo_trans(lbuf_prev[i].isfp, lbuf[i].isfp, 1);
 
-	}
+  }
 
 
 
@@ -194,7 +194,7 @@ void ROB_Latch::post_cycle_power_tabulation () {
     p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(m_buf[i].reg_id, 4) - num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
 
     if(m_prev_buf[i].result != m_buf[i].result)
-      cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl; 
+      cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl;
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
@@ -206,20 +206,19 @@ void ROB_Latch::post_cycle_power_tabulation () {
 }
 
 //TODO CHANGE
-void ROB_Latch::pre_cycle_power_snapshot () {
-	ROB_Circ::pre_cycle_power_snapshot();
-	for (uint32_t i = 0; i<m_lsize; i++)
-	{
-		lbuf_prev[i].data = lbuf[i].data;
-		lbuf_prev[i].reg_id = lbuf[i].reg_id;
-		lbuf_prev[i].isfp = lbuf[i].isfp;
-	}
+void ROB_Latch::pre_cycle_power_snapshot() {
+  ROB_Circ::pre_cycle_power_snapshot();
+  for (uint32_t i = 0; i<m_lsize; i++)
+    {
+      lbuf_prev[i].data = lbuf[i].data;
+      lbuf_prev[i].reg_id = lbuf[i].reg_id;
+      lbuf_prev[i].isfp = lbuf[i].isfp;
+    }
 
   for (uint32_t i = 0; i<m_size; i++)
-	{
-		Afwd_prev[i] = Afwd[i];
-	}
-
+    {
+      Afwd_prev[i] = Afwd[i];
+    }
 
 /*
   m_prev_head = m_head;

@@ -13,7 +13,7 @@ typedef struct lentry {
 
 class ROB_Latch : public ROB_Circ {
  public:
-  ROB_Latch (int s, int in, int fn, int lsize);
+  ROB_Latch (int s, int in, int fn, int lsize, int pflags);
   virtual ~ROB_Latch();
 
  protected:
@@ -34,12 +34,11 @@ class ROB_Latch : public ROB_Circ {
 
     void addToLatch(uint16_t reg, uint32_t data, bool fp);
 
-
     void write_to_arf ();
     void write_entry (entry *entry, ins_t ins);
 
-  void pre_cycle_power_snapshot();
-  void post_cycle_power_tabulation();
+    void pre_cycle_power_snapshot();
+    void post_cycle_power_tabulation();
 
 };
 

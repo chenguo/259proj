@@ -28,13 +28,24 @@ int main (int argc, char *argv[])
   int mode = MODE_BASE;
   ROB *rob;
   ins_t *instructions;
-  int total_insts = 1000;
-  int rob_size = 8;
+  int total_insts = 100000;
+  int rob_size = 128;
+  int print_flags = 0;
 
-  while ((opt = getopt (argc, argv, "chm:")) != -1)
+  while ((opt = getopt (argc, argv, "dhm:")) != -1)
     {
       switch (opt)
         {
+          // Debug output.
+        case 'd':
+          print_flags |= DBG_FLAG;
+          break;
+
+          // Print help message.
+        case 'h':
+          help ();
+          return 0;
+
           // Set mode of ROB simulation.
         case 'm':
           if (strcmp (optarg, "circular") == 0)
@@ -52,14 +63,11 @@ int main (int argc, char *argv[])
             }
           break;
 
-          // Print help message.
-        case 'h':
-          help ();
-          return 0;
         default: break;
 
         }
     }
+  srand (10);
 
   // For now, generate arbitrary mix of instructions.
   instructions = new ins_t [total_insts];
@@ -79,17 +87,17 @@ int main (int argc, char *argv[])
     {
     case MODE_BASE:
       cout << "Basic buffer" << endl;
-      rob = new ROB (rob_size, 3, 1);
+      rob = new ROB (rob_size, 3, 1, print_flags);
       break;
 
     case MODE_CIRC:
       cout << "Circular buffer" << endl;
-      rob = new ROB_Circ (rob_size, 3, 1);
+      rob = new ROB_Circ (rob_size, 3, 1, print_flags);
       break;
 
     case MODE_DYN:
       cout << "Dynamic" << endl;
-      rob = new ROB_Dyn (rob_size, 3, 1, 16, 4);
+      rob = new ROB_Dyn (rob_size, 3, 1, 256, 4, print_flags);
       break;
 
     case MODE_DIST:
@@ -98,15 +106,16 @@ int main (int argc, char *argv[])
 
     case MODE_LATCH:
       cout << "Retention latches" << endl;
-      rob = new ROB_Latch (rob_size, 3, 1,4);
+      rob = new ROB_Latch (rob_size, 3, 1, 4, print_flags);
       break;
 
     default: break;
     }
 
   rob->run (instructions);
+  cout << "Simulation complete." << endl;
 
-
+  delete rob;
   delete [] instructions;
   return 0;
 }
@@ -114,7 +123,11 @@ int main (int argc, char *argv[])
 void help ()
 {
   cout << "ROB Power Simulator usage information:" << endl;
-  cout << "  $ rob_pwr -m [MODE]" << endl;
+  cout << "  $ rob_pwr [OPTIONS]..." << endl;
+  cout << "Options" << endl;
+  cout << "  -d         Enable debug messages." << endl;
+  cout << "  -h         Display this help message." << endl;
+  cout << "  -m         Set operating mode. See \"Modes\"" << endl;
   cout << "Modes:" << endl;
   cout << "  circular   Circular ROB." << endl;
   cout << "  dynamic    Dynamically resized ROB." << endl;

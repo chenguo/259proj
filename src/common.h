@@ -7,7 +7,8 @@
 #define PC_SIZE 32
 #define DATA_SIZE 32
 
-#define P_DEBUG
+#define PRNT_FLAG 0x01
+#define DBG_FLAG 0x10
 
 // ROB entry.
 typedef struct entry {
