@@ -28,7 +28,7 @@ int main (int argc, char *argv[])
   int mode = MODE_BASE;
   ROB *rob;
   ins_t *instructions;
-  int total_insts = 20;
+  int total_insts = 1000;
   int rob_size = 8;
 
   while ((opt = getopt (argc, argv, "chm:")) != -1)

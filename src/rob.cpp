@@ -110,6 +110,7 @@ void ROB::default_print_power_stats(int cycles) {
   cout << "Total # bit transitions to low: " << p_totalBitTransitionsLow << endl;
   cout << "Total # bits remained low: " << p_totalBitsRemainedLow << endl;
   cout << "Total # bits remained high: " << p_totalBitsRemainedHigh << endl;
+  cout << "Total # times reg comparator is used: "<< p_reg_comp_used << endl << endl;
   cout << endl;
 }
 
