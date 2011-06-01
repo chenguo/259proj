@@ -12,8 +12,16 @@ ROB::ROB (int s, int in, int fn, int pflags)
   , m_print(pflags)
 {
   m_n = m_in + m_fn;
+  m_fp_delay = 0;
   m_buf = new entry_t [m_size];
   m_prev_buf = new entry_t [m_size];
+  entry_t empty_entry = {false, 0, 0, 0, 0, false};
+  for (uint32_t i = 0; i < m_size; i++)
+    {
+      m_buf[i] = empty_entry;
+      m_prev_buf[i] = empty_entry;
+    }
+
   FROM_IQ = PC_SIZE;
   FROM_EX = DATA_SIZE;
   TO_DU = DATA_SIZE;

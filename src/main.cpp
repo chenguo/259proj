@@ -97,7 +97,7 @@ int main (int argc, char *argv[])
 
     case MODE_DYN:
       cout << "Dynamic" << endl;
-      rob = new ROB_Dyn (rob_size, 3, 1, 256, 4, print_flags);
+      rob = new ROB_Dyn (rob_size, 3, 1, 256, 8, print_flags);
       break;
 
     case MODE_DIST:

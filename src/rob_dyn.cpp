@@ -22,12 +22,19 @@ ROB_Dyn::ROB_Dyn (int s, int in, int fn, int overflow, int parts, int pflags)
   m_parts = new part_t [m_nparts];
   m_prev_parts = new part_t [m_nparts];
 
+  entry_t empty_entry = {false, 0, 0, 0, 0, false};
   for (int i = 0; i < m_nparts; i++)
     {
       m_parts[i].state = ENABLED;
       m_parts[i].buf = new entry_t [m_part_size];
       m_prev_parts[i].state = ENABLED;
       m_prev_parts[i].buf = new entry_t [m_part_size];
+
+      for (uint32_t j = 0; j < m_part_size; j++)
+        {
+          m_parts[i].buf[j] = empty_entry;
+          m_prev_parts[i].buf[j] = empty_entry;
+        }
     }
 
   /*
@@ -55,7 +62,6 @@ void ROB_Dyn::run (ins_t ins[])
 
   int cycles = 0;
   int ins_num = 0;
-  int ins_targ = 10000;
 
   // TODO: power tabulation. Should be largely the same as circular, but
   // with the added cost of sampling and resizing circuitry.
@@ -80,11 +86,6 @@ void ROB_Dyn::run (ins_t ins[])
 
       cycles++;
       dyn_process (cycles);
-
-      m_tmp = cycles;
-      //ins_targ += 10000;
-      //error_diag ();
-
 
       if (m_print & DBG_FLAG)
         print_msgs (cycles);
