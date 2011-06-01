@@ -293,5 +293,6 @@ void ROB_Circ::print_msgs (int cycles)
   cout << "# Bits Transitioned to High: " << p_perCycleBitTransitionsHigh << endl;
   cout << "# Bits Transitioned to Low: " << p_perCycleBitTransitionsLow << endl;
   cout << "# Bits Remained High: " << p_perCycleBitsRemainedHigh << endl;
-  cout << "# Bits Remained Low: " << p_perCycleBitsRemainedLow << endl << endl;
+  cout << "# Bits Remained Low: " << p_perCycleBitsRemainedLow << endl;
+  cout << "# Times Reg Comparator is used: "<< p_reg_comp_used << endl << endl;
 }
