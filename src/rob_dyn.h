@@ -39,7 +39,7 @@ class ROB_Dyn : public ROB_Circ {
 
   void pre_cycle_power_snapshot ();
   void post_cycle_power_tabulation ();
-  void print_power_stats ();
+  void print_power_stats (int cycles);
 
  private:
   void dyn_process (int cycles);

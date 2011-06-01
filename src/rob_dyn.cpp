@@ -95,7 +95,7 @@ void ROB_Dyn::run (ins_t ins[])
         break;
     }
 
-  print_power_stats ();
+  print_power_stats (cycles);
 }
 
 // Take samples, and check if the buffer needs to be resized.
@@ -334,10 +334,10 @@ void ROB_Dyn::post_cycle_power_tabulation ()
   ROB_Circ::post_cycle_power_tabulation ();
 }
 
-void ROB_Dyn:: print_power_stats ()
+void ROB_Dyn:: print_power_stats (int cycles)
 {
   cout << endl;
-  cout << "Power statistics from the run: " << endl;
+  cout << "Power statistics from the run: (" << cycles << " cycles)" << endl;
   cout << "Total # bits = num_cycles * # enabled partitions * bits per partition = " <<
     m_partition_cycles * m_part_size * 70 << endl;
   cout << "Total # bit transitions to high: " << p_totalBitTransitionsHigh << endl;
