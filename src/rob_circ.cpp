@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <stdlib.h>
 
 #include "rob_circ.h"
 using namespace std;
@@ -76,7 +77,8 @@ void ROB_Circ::update_entries ()
       entry_t *entry = get_entry (i);
       if (entry->cycles && --entry->cycles == 0)
         {
-          cout << "Got result " << i << endl;
+//          cout << "Got result " << i << endl;
+          entry->result = rand ();
           entry->valid = true;
           m_nbiton = bits_on (true, false);
           m_nrex++;
@@ -108,7 +110,7 @@ void ROB_Circ::write_to_arf ()
         {
           if (entry->isfp)
             m++;
-          cout << "Write from " << m_head << endl;
+//          cout << "Write from " << m_head << endl;
           m_head = head_incr (m_head);
           nwritten++;
         }
@@ -139,7 +141,7 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
     {
       do
         {
-          cout << "Read into " << m_tail << endl;
+//          cout << "Read into " << m_tail << endl;
 
           // Write entry.
           // FP instruction uses 2 slots.
@@ -147,7 +149,7 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
             {
               if (tail_incr (m_tail) != m_head)
                 {
-                  cout << "FP ins processed" << endl;
+//                  cout << "FP ins processed" << endl;
 
                   // First half of entry.
                   write_entry (get_entry (m_tail), ins[ins_num]);
@@ -156,7 +158,7 @@ int ROB_Circ::read_from_iq (bool old_empty, int ins_num, ins_t ins[])
                 }
               else
                 {
-                  cout<<"No space for a FP, stall."<<endl;
+//                  cout<<"No space for a FP, stall."<<endl;
                   break;
                 }
             }
@@ -222,8 +224,8 @@ void ROB_Circ::update_power_totals () {
 
 void ROB_Circ::post_cycle_power_tabulation () {
 #ifdef P_DEBUG
-  if(m_prev_head != m_head)
-    cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
+//  if(m_prev_head != m_head)
+//    cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
 #endif
   p_perCycleBitTransitions += num_trans(m_prev_head, m_head, m_head_size);
   p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_head, m_head, m_head_size);
@@ -232,8 +234,8 @@ void ROB_Circ::post_cycle_power_tabulation () {
   p_perCycleBitsRemainedLow += m_head_size - num_hi(m_head,m_head_size) - num_lo_trans(m_prev_head, m_head, m_head_size);
 
 #ifdef P_DEBUG
-  if(m_prev_tail != m_tail)
-    cout << "*TRANSITION* m_tail: " << m_prev_tail << "->" << m_tail << endl;
+//  if(m_prev_tail != m_tail)
+//    cout << "*TRANSITION* m_tail: " << m_prev_tail << "->" << m_tail << endl;
 #endif
   p_perCycleBitTransitions += num_trans(m_prev_tail, m_tail, m_head_size);
   p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_tail, m_tail, m_head_size);
@@ -281,6 +283,7 @@ bool ROB_Circ::isinROB( uint16_t reg)
 
 void ROB_Circ::print_msgs (int cycles)
 {
+/*
   cout << "Cycles: " << cycles << endl;
   cout << "Head: " << m_head << endl;
   cout << "Tail: " << m_tail << endl;
@@ -294,4 +297,5 @@ void ROB_Circ::print_msgs (int cycles)
   cout << "# Bits Transitioned to Low: " << p_perCycleBitTransitionsLow << endl;
   cout << "# Bits Remained High: " << p_perCycleBitsRemainedHigh << endl;
   cout << "# Bits Remained Low: " << p_perCycleBitsRemainedLow << endl;
+*/
 }

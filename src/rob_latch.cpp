@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <stdlib.h>
 
 #include "rob_latch.h"
 
@@ -42,7 +43,8 @@ void ROB_Latch::update_entries ()
       entry_t *entry = get_entry (i);
       if (entry->cycles && --entry->cycles == 0)
         {
-          cout << "Got result " << i << endl;
+//          cout << "Got result " << i << endl;
+          entry->result = rand ();
           entry->valid = true;
           m_nbiton = bits_on (true, false);
           addToLatch(entry->reg_id, entry->result, entry->isfp);
@@ -76,7 +78,7 @@ void ROB_Latch::write_to_arf ()
 								m++;
               if (Afwd[m_head])
                 fwdcnt++;
-							cout << "Write from " << m_head << endl;
+//							cout << "Write from " << m_head << endl;
 							Afwd[m_head] = false;
               m_head = (m_head + 1) % m_size;
               nwritten++;
@@ -117,7 +119,6 @@ void ROB_Latch::write_entry (entry *entry, ins_t ins)
 //TODO CHANGE add stuff
 void ROB_Latch::post_cycle_power_tabulation () {
 	ROB_Circ::post_cycle_power_tabulation();
-
   uint32_t i;
   for(i = 0; i < m_size; i++) {  
     p_perCycleBitTransitions += num_trans(Afwd_prev[i], Afwd[i], 1);
@@ -150,58 +151,6 @@ void ROB_Latch::post_cycle_power_tabulation () {
 	}
 
 
-
-/*  if(m_prev_head != m_head)
-    cout << "*TRANSITION* m_head: " << m_prev_head << "->" << m_head << endl;
-  p_perCycleBitTransitions += num_trans(m_prev_head, m_head, m_head_size);
-  p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_head, m_head, m_head_size);
-  p_perCycleBitTransitionsLow += num_lo_trans(m_prev_head, m_head, m_head_size);
-  p_perCycleBitsRemainedHigh += num_hi(m_head,m_head_size) - num_hi_trans(m_prev_head, m_head, m_head_size);
-  p_perCycleBitsRemainedLow += m_head_size - num_hi(m_head,m_head_size) - num_lo_trans(m_prev_head, m_head, m_head_size);
-
-  if(m_prev_tail != m_tail)
-    cout << "*TRANSITION* m_tail: " << m_prev_tail << "->" << m_tail << endl;
-  p_perCycleBitTransitions += num_trans(m_prev_tail, m_tail, m_head_size);
-  p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_tail, m_tail, m_head_size);
-  p_perCycleBitTransitionsLow += num_lo_trans(m_prev_tail, m_tail, m_head_size);
-  p_perCycleBitsRemainedHigh += num_hi(m_tail, m_head_size) - num_hi_trans(m_prev_tail, m_tail, m_head_size);
-  p_perCycleBitsRemainedLow += m_head_size - num_hi(m_tail, m_head_size) - num_lo_trans(m_prev_tail, m_tail, m_head_size);
-
-  uint32_t i;
-  for(i = 0; i < m_size; i++) {  
-    if(m_prev_buf[i].valid != m_buf[i].valid)
-      cout << "*TRANSITION* m_buf[" << i << "].valid: " << m_prev_buf[i].valid << "->" << m_buf[i].valid << endl;
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].valid, 1) - num_hi_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-    p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(m_buf[i].valid, 1) - num_lo_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
-
-    if(m_prev_buf[i].pc != m_buf[i].pc)
-      cout << "*TRANSITION* m_buf[" << i << "].pc: " << m_prev_buf[i].pc << "->" << m_buf[i].pc << endl;
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].pc, 32) - num_hi_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-    p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].pc, 32) - num_lo_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
-
-    if(m_prev_buf[i].reg_id != m_buf[i].reg_id)
-      cout << "*TRANSITION* m_buf[" << i << "].reg_id: " << m_prev_buf[i].reg_id << "->" << m_buf[i].reg_id << endl;
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].reg_id, 4) - num_hi_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-    p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(m_buf[i].reg_id, 4) - num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
-
-    if(m_prev_buf[i].result != m_buf[i].result)
-      cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl; 
-    p_perCycleBitTransitions += num_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitTransitionsLow += num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitsRemainedHigh += num_hi(m_buf[i].result, 32) - num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-    p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].result, 32) - num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
-  }
-*/
 
 }
 
@@ -292,6 +241,44 @@ void ROB_Latch::addToLatch(uint16_t reg, uint32_t data, bool fp)
 }
 
 
+
+void ROB_Latch::run (ins_t ins[])
+{
+  cout << "In Latch class run method: " << endl;
+
+  int cycles = 0;
+  int ins_num = 0;
+
+  // NOTE: During each cycle, everything happens in parallel. So in this loop,
+  // be careful of how variable changes may affect this.
+  while (1)
+    {
+      pre_cycle_power_snapshot();
+      bool old_empty = m_empty;
+
+      update_entries ();
+      write_to_arf ();
+      ins_num = read_from_iq (old_empty, ins_num, ins);
+
+      // TODO: Count the read ports being driven for operands.
+      // Get percentage this happens from Henry.
+
+      post_cycle_power_tabulation();
+      update_power_totals();
+
+      cycles++;
+      print_msgs (cycles);
+
+
+      // Break when we've written all the instructions.
+      if (m_empty && ins[ins_num].type == -1)
+        break;
+    }
+
+  print_power_stats(cycles);
+
+  cout << "Simulation complete." << endl;
+}
 
 
 

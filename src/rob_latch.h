@@ -15,6 +15,7 @@ class ROB_Latch : public ROB_Circ {
  public:
   ROB_Latch (int s, int in, int fn, int lsize);
   virtual ~ROB_Latch();
+  virtual void run (ins_t instructions[]);
 
  protected:
     uint32_t m_lhead;

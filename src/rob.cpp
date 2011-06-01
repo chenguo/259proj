@@ -31,8 +31,8 @@ void ROB::default_post_cycle_power_tabulation() {
 uint32_t i;
   for(i = 0; i < m_size; i++) {
 #ifdef P_DEBUG
-    if(m_prev_buf[i].valid != m_buf[i].valid)
-      cout << "*TRANSITION* m_buf[" << i << "].valid: " << m_prev_buf[i].valid << "->" << m_buf[i].valid << endl;
+//    if(m_prev_buf[i].valid != m_buf[i].valid)
+//      cout << "*TRANSITION* m_buf[" << i << "].valid: " << m_prev_buf[i].valid << "->" << m_buf[i].valid << endl;
 #endif
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
     p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
@@ -41,8 +41,8 @@ uint32_t i;
     p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(m_buf[i].valid, 1) - num_lo_trans(m_prev_buf[i].valid, m_buf[i].valid, 1);
 
 #ifdef P_DEBUG
-    if(m_prev_buf[i].pc != m_buf[i].pc)
-      cout << "*TRANSITION* m_buf[" << i << "].pc: " << m_prev_buf[i].pc << "->" << m_buf[i].pc << endl;
+ //   if(m_prev_buf[i].pc != m_buf[i].pc)
+ //     cout << "*TRANSITION* m_buf[" << i << "].pc: " << m_prev_buf[i].pc << "->" << m_buf[i].pc << endl;
 #endif
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
     p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
@@ -51,8 +51,8 @@ uint32_t i;
     p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].pc, 32) - num_lo_trans(m_prev_buf[i].pc, m_buf[i].pc, 32);
 
 #ifdef P_DEBUG
-    if(m_prev_buf[i].reg_id != m_buf[i].reg_id)
-      cout << "*TRANSITION* m_buf[" << i << "].reg_id: " << m_prev_buf[i].reg_id << "->" << m_buf[i].reg_id << endl;
+ //   if(m_prev_buf[i].reg_id != m_buf[i].reg_id)
+  //    cout << "*TRANSITION* m_buf[" << i << "].reg_id: " << m_prev_buf[i].reg_id << "->" << m_buf[i].reg_id << endl;
 #endif
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
     p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
@@ -61,8 +61,8 @@ uint32_t i;
     p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(m_buf[i].reg_id, 4) - num_lo_trans(m_prev_buf[i].reg_id, m_buf[i].reg_id, 4);
 
 #ifdef P_DEBUG
-    if(m_prev_buf[i].result != m_buf[i].result)
-      cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl;
+  //  if(m_prev_buf[i].result != m_buf[i].result)
+  //    cout << "*TRANSITION* m_buf[" << i << "].result: " << m_prev_buf[i].result << "->" << m_buf[i].result << endl;
 #endif
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].result, m_buf[i].result, 32);
     p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].result, m_buf[i].result, 32);
@@ -71,8 +71,8 @@ uint32_t i;
     p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf[i].result, 32) - num_lo_trans(m_prev_buf[i].result, m_buf[i].result, 32);
 
 #ifdef P_DEBUG
-    if(m_prev_buf[i].isfp != m_buf[i].isfp)
-      cout << "*TRANSITION* m_buf[" << i << "].isfp: " << m_prev_buf[i].isfp << "->" << m_buf[i].isfp << endl;
+ //   if(m_prev_buf[i].isfp != m_buf[i].isfp)
+  //    cout << "*TRANSITION* m_buf[" << i << "].isfp: " << m_prev_buf[i].isfp << "->" << m_buf[i].isfp << endl;
 #endif
     p_perCycleBitTransitions += num_trans(m_prev_buf[i].isfp, m_buf[i].isfp, 1);
     p_perCycleBitTransitionsHigh += num_hi_trans(m_prev_buf[i].isfp, m_buf[i].isfp, 1);
