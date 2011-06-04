@@ -8,7 +8,8 @@
 #define DATA_SIZE 32
 #define ENTRY_BIT_COUNT 70 // 1+32+32+4+1
 
-#define P_DEBUG
+#define PRNT_FLAG 0x01
+#define DBG_FLAG 0x10
 
 // ROB entry.
 typedef struct entry {

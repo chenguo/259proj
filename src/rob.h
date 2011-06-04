@@ -7,16 +7,12 @@ using namespace std;
 
 class ROB {
  public:
-  ROB (int s, int in, int fn);
+  ROB (int s, int in, int fn, int pflags);
   virtual ~ROB ();
   virtual void run (ins_t instructions[]);
 
   int get_max_size() {return m_size;};
   int get_n() {return m_n;};
-  void default_pre_cycle_power_snapshot();
-  void default_post_cycle_power_tabulation();
-  void default_print_power_stats (int cycles);
-  void default_update_power_totals ();
 
  protected:
   uint32_t m_size;
@@ -27,9 +23,19 @@ class ROB {
   uint32_t m_fp_delay; // Models "backed-up"-ness of FP units.
   uint32_t m_n;  // n ways super scalar
   uint32_t m_nbiton;
+  int m_print;
+
+  int m_tmp;
 
   virtual void write_entry (entry_t *entry, ins_t ins) {};
   virtual void print_msgs (int cycles) {};
+  virtual entry_t *get_entry (uint32_t ptr);
+  virtual entry_t *get_prev_buf_entry (uint32_t ptr);
+
+  void pre_cycle_power_snapshot();
+  void post_cycle_power_tabulation();
+  void print_power_stats (int cycles);
+  void update_power_totals();
 
 /*
   n ports FROM issue queue
@@ -65,7 +71,7 @@ class ROB {
 
   int p_bit_count;
 
-  int p_reg_comp_used; 
+  int p_reg_comp_used;
 };
 
 #endif
