@@ -9,6 +9,7 @@
 #include "rob_circ.h"
 #include "rob_dyn.h"
 #include "rob_latch.h"
+#include "rob_dist.h"
 using namespace std;
 
 enum {
@@ -23,7 +24,8 @@ void help ();
 
 int main (int argc, char *argv[])
 {
-  srand ( time(NULL) );
+  //srand ( time(NULL) );
+  srand(2);
   char opt;
   int mode = MODE_BASE;
   ROB *rob;
@@ -75,6 +77,11 @@ int main (int argc, char *argv[])
   instructions[total_insts-1].type = -1;
   instructions[total_insts-1].pc = -1;
 
+  cout << "Instruction stream:" << endl;
+  for(int i = 0; i < total_insts; i++) {
+    cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS=" << instructions[i].regs << " EXEC=" << instructions[i].exec << endl;
+  }
+ 
   switch (mode)
     {
     case MODE_BASE:
@@ -94,6 +101,7 @@ int main (int argc, char *argv[])
 
     case MODE_DIST:
       cout << "Distributed" << endl;
+      rob = new ROB_Dist (rob_size, 2, 3, 1);
       break;
 
     case MODE_LATCH:
@@ -107,6 +115,7 @@ int main (int argc, char *argv[])
   rob->run (instructions);
 
 
+  delete rob;
   delete [] instructions;
   return 0;
 }

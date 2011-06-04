@@ -6,19 +6,28 @@
 #define MASK4 0b1111
 #define PC_SIZE 32
 #define DATA_SIZE 32
+#define ENTRY_BIT_COUNT 70 // 1+32+32+4+1
 
 #define P_DEBUG
 
 // ROB entry.
 typedef struct entry {
-  bool valid; //1 is valid
+  bool valid; // 1 bit
   // More flags?
   uint32_t cycles;
-  uint32_t result;
-  uint32_t pc;
+  uint32_t result; // 32 bits
+  uint32_t pc; // 32 bits
   uint16_t reg_id;  // only 4  lower bits are used
-  bool isfp;
+  bool isfp; // 1 bit
 } entry_t;
+
+typedef struct fifo_entry {
+  bool valid; // 1
+  uint32_t pc;   // 32 bits
+  uint32_t rob_id;  // only log(c)/log(2) bits
+  uint16_t reg_id; // only 4 bits 
+  uint32_t rob_index;  // simulation purposes only, not modeled
+} fifo_entry_t;
 
 typedef struct instruction {
   int type;

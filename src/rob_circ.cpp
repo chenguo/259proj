@@ -11,7 +11,7 @@ ROB_Circ::ROB_Circ (int s, int in, int fn) : ROB (s, in, fn)
   m_head = 0;
   m_tail = 0;
   m_empty = true;
-  m_head_size = (uint32_t)((log(m_size) / log(2))+1);
+  m_head_size = (uint32_t)(ceil(log(m_size) / log(2)));
   p_bit_count += (2*m_head_size);
 
   cout << "New ROB_Circ:" << endl;
@@ -38,12 +38,6 @@ void ROB_Circ::run (ins_t ins[])
     {
       pre_cycle_power_snapshot();
       bool old_empty = m_empty;
-
-      p_perCycleBitTransitions = 0;
-      p_perCycleBitTransitionsHigh = 0;
-      p_perCycleBitTransitionsLow = 0;
-      p_perCycleBitsRemainedLow = 0;
-      p_perCycleBitsRemainedHigh = 0;
 
       update_entries ();
       write_to_arf ();

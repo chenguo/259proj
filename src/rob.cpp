@@ -24,7 +24,7 @@ ROB::ROB (int s, int in, int fn)
   p_totalBitsRemainedHigh = 0;
   p_totalBitsRemainedLow = 0;
   p_reg_comp_used = 0;
-  p_bit_count = (70*m_size); // 70 = PC[32] + RESULT[32] + REG_ID[4] + VALID[1] + ISFP[1]
+  p_bit_count = (ENTRY_BIT_COUNT*m_size); // 70 = PC[32] + RESULT[32] + REG_ID[4] + VALID[1] + ISFP[1]
 }
 
 void ROB::default_post_cycle_power_tabulation() {
@@ -100,6 +100,13 @@ void ROB::default_pre_cycle_power_snapshot() {
     m_prev_buf[i].result = m_buf[i].result;
     m_prev_buf[i].isfp = m_buf[i].isfp;
   }
+
+  p_perCycleBitTransitions = 0;
+  p_perCycleBitTransitionsHigh = 0;
+  p_perCycleBitTransitionsLow = 0;
+  p_perCycleBitsRemainedLow = 0;
+  p_perCycleBitsRemainedHigh = 0;
+
 }
 
 void ROB::default_print_power_stats(int cycles) {
