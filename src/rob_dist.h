@@ -6,7 +6,7 @@ using namespace std;
 
 class ROB_Dist : public ROB {
  public:
-  ROB_Dist (int s, int c, int in, int fn);
+  ROB_Dist (int s, int c, int in, int fn, int pflags);
   virtual ~ROB_Dist();
   virtual void run (ins_t instructions[]);
   bool isinROB(uint16_t reg);
@@ -27,10 +27,10 @@ class ROB_Dist : public ROB {
   virtual void write_entry (uint32_t clusterId, ins_t ins);
   virtual void print_msgs (int cycles);
 
-  void pre_cycle_power_snapshot();
-  void post_cycle_power_tabulation();
-  void print_power_stats (int cycles);
-  void update_power_totals();
+  uint32_t getCyclesToCompletion(uint32_t reg);
+
+  void dist_pre_cycle_power_snapshot();
+  void dist_post_cycle_power_tabulation();
 
   uint32_t m_cluster_count;
   uint32_t m_cluster_size;

@@ -26,6 +26,8 @@ class ROB_Circ : public ROB {
   virtual void print_rob ();
   virtual void error_diag () {};
 
+  uint32_t getCyclesToCompletion(uint32_t reg);
+
   void pre_cycle_power_snapshot ();
   void post_cycle_power_tabulation ();
 

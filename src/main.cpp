@@ -30,9 +30,9 @@ int main (int argc, char *argv[])
   int mode = MODE_BASE;
   ROB *rob;
   ins_t *instructions;
-  int total_insts = 100000;
+  int total_insts = 10000;
   int rob_size = 128;
-  int print_flags = 0;
+  int print_flags = 1;
 
   while ((opt = getopt (argc, argv, "dhm:")) != -1)
     {
@@ -109,7 +109,7 @@ int main (int argc, char *argv[])
 
     case MODE_DIST:
       cout << "Distributed" << endl;
-      rob = new ROB_Dist (rob_size, 2, 3, 1);
+      rob = new ROB_Dist (rob_size, 2, 3, 1, print_flags);
       break;
 
     case MODE_LATCH:

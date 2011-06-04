@@ -94,6 +94,7 @@ void ROB_Circ::write_to_arf ()
   uint32_t m = m_n;
   uint32_t nwritten = 0;
   entry_t *entry = NULL;
+  bool isFirstFpEntry = true;
 
   // Loop through entries. Stopping conditions:
   // 1. m_head == m_tail: buffer is empty
@@ -105,8 +106,14 @@ void ROB_Circ::write_to_arf ()
       entry = get_entry (m_head);
       if (entry->valid)
         {
-          if (entry->isfp)
-            m++;
+          if (entry->isfp) {
+            if(isFirstFpEntry) {
+              m++;
+              isFirstFpEntry = false;
+            } else {
+              isFirstFpEntry = true;
+            }
+          }
           m_head = head_incr (m_head);
           nwritten++;
         }
@@ -192,6 +199,19 @@ uint32_t ROB_Circ::tail_incr (uint32_t tail_ptr)
   return (tail_ptr + 1) % m_size;
 }
 
+uint32_t ROB_Circ::getCyclesToCompletion(uint32_t reg) {
+  uint32_t i = m_head;
+  if (!m_empty)
+    do { 
+      entry_t *entry = get_entry(i);
+      if(entry->reg_id == reg) 
+        return entry->cycles;
+      i = ((i+1)%m_size);
+    } while(i != m_tail);
+  cout << "Couldnt find cycles to completion when expected!" << endl;
+  exit(1);
+}
+
 void ROB_Circ::write_entry (entry *entry, ins_t ins)
 {
   uint16_t reg_mask = 0xF;
@@ -204,11 +224,24 @@ void ROB_Circ::write_entry (entry *entry, ins_t ins)
   entry->isfp = (ins.type >= FADD);
 
   m_tail = tail_incr (m_tail);
-
-  if(isinROB ((ins.regs >> 4) & reg_mask))
+  uint32_t operandRegA = ((ins.regs >> 4) & reg_mask);
+  uint32_t operandRegB = ((ins.regs >> 8) & reg_mask);
+  uint32_t extraCyclesA = 0;
+  uint32_t extraCyclesB = 0;
+  if(isinROB (operandRegA)) {
+    extraCyclesA = getCyclesToCompletion(operandRegA);
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
     m_nwdu++;
-  if(isinROB ((ins.regs >> 8) & reg_mask))
+  }
+  if(isinROB (operandRegB)) {
+    extraCyclesB = getCyclesToCompletion(operandRegB);
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
     m_nwdu++;
+  }
+  uint32_t maxExtraCycles = max(extraCyclesA, extraCyclesB);
+  if(maxExtraCycles)
+    //cout << "Increasing ins.pc=" << ins.pc << " cycle count by " << maxExtraCycles << " to allow forwarding" << endl;
+  entry->cycles += maxExtraCycles;
 }
 
 void ROB_Circ::pre_cycle_power_snapshot () {

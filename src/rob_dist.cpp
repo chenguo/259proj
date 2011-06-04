@@ -6,7 +6,7 @@ using namespace std;
 
 extern int ins_cyc[];
 
-ROB_Dist::ROB_Dist (int s, int c, int in, int fn) : ROB (s, in, fn)
+ROB_Dist::ROB_Dist (int s, int c, int in, int fn, int pflags) : ROB (s, in, fn, pflags)
 {
   p_bit_count = 0;
   m_cluster_size = m_size/c;
@@ -91,7 +91,7 @@ void ROB_Dist::run (ins_t ins[])
   // be careful of how variable changes may affect this.
   while (1)
     {
-      pre_cycle_power_snapshot();
+      dist_pre_cycle_power_snapshot();
 
       update_entries ();
       write_to_arf ();
@@ -100,7 +100,7 @@ void ROB_Dist::run (ins_t ins[])
       // TODO: Count the read ports being driven for operands.
       // Get percentage this happens from Henry.
 
-      post_cycle_power_tabulation();
+      dist_post_cycle_power_tabulation();
       update_power_totals();
 
       cycles++;
@@ -145,6 +145,7 @@ void ROB_Dist::write_to_arf ()
 
   uint32_t m = m_n;
   uint32_t nwritten = 0;
+  bool isFirstFp = true;
 
   // Loop through entries. Stopping conditions:
   // 1. m_head == m_tail: buffer is empty
@@ -154,8 +155,15 @@ void ROB_Dist::write_to_arf ()
   while((fifo_entry->valid && nwritten < m) && !fifo_empty) {
       // Get entry and check it for validity. If valid, commit it.
     entry_t *entry = get_entry(fifo_entry->rob_id, fifo_entry->rob_index);
-    if (entry->isfp)
-      m++;
+    if (entry->isfp) {
+      if(isFirstFp) {
+        m++;
+        //cout << "fp";
+        isFirstFp = false;
+      } else {
+        isFirstFp = true;
+      }
+    }
     cout << "Writing central_fifo[" << fifo_head << "] -> rob[" << fifo_entry->rob_id << "][" << fifo_entry->rob_index << "] to ARF" << endl;
     m_head[fifo_entry->rob_id] = ptr_incr (m_head[fifo_entry->rob_id]);
     if(m_head[fifo_entry->rob_id] == m_tail[fifo_entry->rob_id])
@@ -252,6 +260,20 @@ fifo_entry_t *ROB_Dist::return_fifo_entry(uint32_t index) {
   return &central_fifo[index];
 }
 
+uint32_t ROB_Dist::getCyclesToCompletion(uint32_t reg) {
+  uint32_t i = fifo_head;
+  if(!fifo_empty)
+    do {
+      fifo_entry_t *fifo_entry = return_fifo_entry(i);
+      entry_t *entry = get_entry(fifo_entry->rob_id, fifo_entry->rob_index);
+      if(entry->reg_id == reg)
+        return entry->cycles;
+      i = fifo_ptr_incr(i);
+    } while(i != fifo_tail);
+  cout << "Couldnt find cycles to completion when expected!" << endl;
+  exit(1);
+}
+
 void ROB_Dist::write_entry(uint32_t clusterId, ins_t ins)
 {
   uint16_t reg_mask = 0xF;
@@ -277,17 +299,28 @@ void ROB_Dist::write_entry(uint32_t clusterId, ins_t ins)
   m_tail[clusterId] = ptr_incr (m_tail[clusterId]);
   fifo_tail = fifo_ptr_incr(fifo_tail);
 
-  if(isinROB ((ins.regs >> 4) & reg_mask))
+  uint32_t operandRegA = ((ins.regs >> 4) & reg_mask);
+  uint32_t operandRegB = ((ins.regs >> 8) & reg_mask);
+  uint32_t extraCyclesA = 0;
+  uint32_t extraCyclesB = 0;
+
+  if(isinROB (operandRegA)) {
+    extraCyclesA = getCyclesToCompletion(operandRegA);
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
     m_nwdu++;
-  if(isinROB ((ins.regs >> 8) & reg_mask))
+  }
+  if(isinROB (operandRegB)) {
+    extraCyclesB = getCyclesToCompletion(operandRegB);
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
     m_nwdu++;
+  }
+  uint32_t maxExtraCycles = max(extraCyclesA, extraCyclesB);
+  if(maxExtraCycles)
+    //cout << "Increasing ins.pc=" << ins.pc << " cycles cout by " << maxExtraCycles << " to allow forwarding" << endl;
+  entry->cycles += maxExtraCycles;
 }
 
-void ROB_Dist::update_power_totals () {
-  default_update_power_totals();
-}
-
-void ROB_Dist::post_cycle_power_tabulation () {
+void ROB_Dist::dist_post_cycle_power_tabulation () {
 #ifdef P_DEBUG
   if(fifo_prev_head != fifo_head)
     cout << "*TRANSITION* fifo_head: " << fifo_prev_head << "->" << fifo_head << endl;
@@ -428,7 +461,7 @@ void ROB_Dist::post_cycle_power_tabulation () {
   //default_post_cycle_power_tabulation();
 }
 
-void ROB_Dist::pre_cycle_power_snapshot () {
+void ROB_Dist::dist_pre_cycle_power_snapshot () {
   fifo_prev_head = fifo_head;
   fifo_prev_tail = fifo_tail;
   for(uint32_t i = 0; i < m_size; i++) {
@@ -451,13 +484,8 @@ void ROB_Dist::pre_cycle_power_snapshot () {
     }
     m_prev_empty[clusterId] = m_empty[clusterId];
   }
-  default_pre_cycle_power_snapshot();
+  pre_cycle_power_snapshot();
 }
-
-void ROB_Dist::print_power_stats (int cycles) {
-  default_print_power_stats(cycles);
-}
-
 
 bool ROB_Dist::isinROB( uint16_t reg)
 {
