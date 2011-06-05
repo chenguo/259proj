@@ -21,6 +21,8 @@ enum {
 };
 
 void help ();
+ins_t *generate_instruction_stream();
+int generate_type(ins_profile input, int gen);
 
 int main (int argc, char *argv[])
 {
@@ -30,7 +32,6 @@ int main (int argc, char *argv[])
   int mode = MODE_BASE;
   ROB *rob;
   ins_t *instructions;
-  int total_insts = 10000;
   int rob_size = 128;
   int print_flags = 1;
 
@@ -72,24 +73,8 @@ int main (int argc, char *argv[])
   srand (10);
 
   // For now, generate arbitrary mix of instructions.
-  instructions = new ins_t [total_insts];
-  int pc_start = 0;
-  for (int i = 0; i < total_insts-1; i++)
-    {
-      instructions[i].type = rand () % INS_TYPES;
-      instructions[i].pc = pc_start;
-      instructions[i].regs = rand() %0xFFF;
-      instructions[i].exec = false;
-      pc_start += 4;
-    }
-  instructions[total_insts-1].type = -1;
-  instructions[total_insts-1].pc = -1;
+  instructions = generate_instruction_stream();
 
-  cout << "Instruction stream:" << endl;
-  for(int i = 0; i < total_insts; i++) {
-    cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS=" << instructions[i].regs << " EXEC=" << instructions[i].exec << endl;
-  }
- 
   switch (mode)
     {
     case MODE_BASE:
@@ -141,4 +126,81 @@ void help ()
   cout << "  dynamic    Dynamically resized ROB." << endl;
   cout << "  dist       Distributed ROB." << endl;
   cout << "  latch      ROB with retention latches." << endl;
+}
+
+ins_t *generate_instruction_stream() {
+  ins_profile default_profile;
+  default_profile.loadProc = 0.10;
+  default_profile.storeProc = 0.10;
+  default_profile.addProc = 0.10;
+  default_profile.subProc = 0.10;
+  default_profile.multProc = 0.10;
+  default_profile.divProc = 0.10;
+  default_profile.faddProc = 0.10;
+  default_profile.fsubProc = 0.10;
+  default_profile.fmultProc = 0.10;
+  default_profile.fdivProc = 0.10;
+  default_profile.forwardingRate = 0.10;
+  default_profile.instCount = 10000;
+
+  ins_profile input = default_profile;
+
+  ins_t *instructions = new ins_t [input.instCount+1];
+  int pc_start = 0;
+  for (int i = 0; i < input.instCount; i++)
+    {
+      instructions[i].type = generate_type(input,(rand()%100));
+      instructions[i].pc = pc_start;
+      instructions[i].regs = rand() %0xFFF;
+      instructions[i].exec = false;
+      pc_start += 4;
+    }
+  instructions[input.instCount-1].type = -1;
+  instructions[input.instCount-1].pc = -1;
+
+cout << "Instruction stream:" << endl;
+  for(int i = 0; i < input.instCount; i++) {
+    cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS=" << instructions[i].regs << " EXEC=" << instructions[i].exec << endl;
+  }
+  return instructions;
+}
+
+int generate_type(ins_profile input, int gen) {
+  float seed = (float)gen/100;
+  float loadRange = input.loadProc;
+  float storeRange = loadRange + input.storeProc;
+  float addRange = storeRange + input.addProc;
+  float subRange = addRange + input.subProc;
+  float multRange = subRange + input.multProc;
+  float divRange = multRange + input.divProc;
+  float faddRange = divRange + input.faddProc;
+  float fsubRange = faddRange + input.fsubProc;
+  float fmultRange = fsubRange + input.fmultProc;
+  float fdivRange = fmultRange + input.fdivProc;
+
+
+  if(seed < loadRange)
+    return LOAD;
+  else if (seed < storeRange)
+    return STORE;
+  else if (seed < addRange)
+    return ADD;
+  else if (seed < subRange)
+    return SUB;
+  else if (seed < multRange)
+    return MULT;
+  else if (seed < divRange)
+    return DIV;
+  else if (seed < faddRange)
+    return FADD;
+  else if (seed < fsubRange)
+    return FSUB;
+  else if (seed < fmultRange)
+    return FMULT;
+  else if (seed < fdivRange)
+    return FDIV;
+  else {
+    cout << "Instruction profile percentages dont total 100, check again." << endl;
+    exit(1);
+  }
 }

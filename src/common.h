@@ -53,6 +53,20 @@ enum {
   INS_TYPES
 };
 
+typedef struct instruction_profile {
+  float loadProc;
+  float storeProc;
+  float addProc;
+  float subProc;
+  float multProc;
+  float divProc;
+  float faddProc;
+  float fsubProc;
+  float fmultProc;
+  float fdivProc;
+  float forwardingRate;
+  int instCount;
+} ins_profile;
 
 // Instruction cycle cost look up table.
 // TODO: make this exhaustive, and fill in actual numbers.
