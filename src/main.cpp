@@ -23,6 +23,7 @@ enum {
 void help ();
 ins_t *generate_instruction_stream();
 int generate_type(ins_profile input, int gen);
+uint32_t generate_register(uint32_t history, float forwardRate);
 
 int main (int argc, char *argv[])
 {
@@ -144,29 +145,45 @@ ins_t *generate_instruction_stream() {
   default_profile.instCount = 10000;
 
   ins_profile input = default_profile;
+  uint32_t reg_history_buffer = 0x0;
+  uint32_t regS1 = 0x0;
+  uint32_t regS2 = 0x0;
+  uint32_t regD = 0x0;
 
-  ins_t *instructions = new ins_t [input.instCount+1];
+ins_t *instructions = new ins_t [input.instCount+1];
   int pc_start = 0;
+  cout << "Instruction stream:" << endl;
   for (int i = 0; i < input.instCount; i++)
     {
       instructions[i].type = generate_type(input,(rand()%100));
       instructions[i].pc = pc_start;
-      instructions[i].regs = rand() %0xFFF;
+      regS1 = generate_register(reg_history_buffer,input.forwardingRate);
+      regS2 = generate_register(reg_history_buffer,input.forwardingRate);
+      regD = rand()%0xF;
+      reg_history_buffer = (reg_history_buffer << 4) | (regD&0xF);
+      instructions[i].regs = ((regS1&0xF) << 8) | ((regS2&0xF) << 4) | (regD&0xF);
       instructions[i].exec = false;
       pc_start += 4;
+      cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS S1 S2 D= " << ((instructions[i].regs >> 8)&0xF) << " " << ((instructions[i].regs >> 4)&0xF) << " " << (instructions[i].regs&0xF) << " EXEC=" << instructions[i].exec << endl;
     }
-  instructions[input.instCount-1].type = -1;
-  instructions[input.instCount-1].pc = -1;
+  instructions[input.instCount].type = -1;
+  instructions[input.instCount].pc = -1;
+  cout << "Type=" << instructions[input.instCount].type << " PC=" << instructions[input.instCount].pc << " REGS S1 S2 D= " << ((instructions[input.instCount].regs >> 8)&0xF) << " " << ((instructions[input.instCount].regs >> 4)&0xF) << " " << (instructions[input.instCount].regs&0xF) << " EXEC=" << instructions[input.instCount].exec << endl;
 
-cout << "Instruction stream:" << endl;
-  for(int i = 0; i < input.instCount; i++) {
-    cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS=" << instructions[i].regs << " EXEC=" << instructions[i].exec << endl;
-  }
   return instructions;
 }
 
+uint32_t generate_register(uint32_t history, float forwardRate) {
+  int seed = rand();
+  if((float)(seed%100)/100.0 < forwardRate) { 
+    //cout << "Dependency occurred" << endl;
+    return (history>>(4*(seed%8))&(0xF));
+  } else 
+    return (seed%0xF);
+}
+
 int generate_type(ins_profile input, int gen) {
-  float seed = (float)gen/100;
+  float seed = ((float)gen)/100.0;
   float loadRange = input.loadProc;
   float storeRange = loadRange + input.storeProc;
   float addRange = storeRange + input.addProc;
