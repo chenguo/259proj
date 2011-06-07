@@ -30,7 +30,7 @@
 
 \begin{document}
 %TODO
-\title{Compareing Power Optimizations in the Reorder Buffer}
+\title{Comparing Power Optimizations in the Reorder Buffer}
 %
 % You need the command \numberofauthors to handle the 'placement
 % and alignment' of the authors beneath the title.
@@ -79,7 +79,7 @@ Chen Guo\\
        \affaddr{Los Angeles, CA 90095}\\
 % 2nd. author
 \alignauthor
-Alex Edwards\\
+Alexander Edwards\\
        \affaddr{UCLA Computer Science Department}\\
        \affaddr{4732 Boelter Hall}\\
        \affaddr{Los Angeles, CA 90095}\\
@@ -115,9 +115,18 @@ ROB advancements to improve power efficiency.
 
 \section{Introduction}
 BLAH BLAH BLAH INTRO WEEEE
-\section{TITLE1}
+\section{Project Implementation}
+Our simulator provides a cycle accurate behavioral model of a standard circular re-order buffer.  At the outset of the project, the standard re-order buffer we intended to implement was a non-circular RAM-based re-order buffer.  However, after feedback from the course instructor and students it was decided that a circular buffer is more widely held as being the 'standard' buffer type and would serve as an ideal underlying model for power optimizations.  Thus, we implement and compare the standard circular re-order buffer to circular re-order buffers with the following optimizations: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch). The following sections outline each of the above model implementations as well as input instruction generation and power results tabulation.  
+\subsection{Instruction Generation}
+\subsection{Model Implementation}
+\subsubsection{Circular ROB}
+\subsubsection{Distributed ROB}
+\subsubsection{Dynamic ROB}
+\subsubsection{Reduced Output Port ROB (Retention Latch)}
+\subsection{Power Tabulation Implementation}
+\section{Results}
 hi
-\subsection{subsection title}
+\subsection{subsection titl}
 sub section.. with table!
 \begin{table*}
 \centering
@@ -130,8 +139,6 @@ Command&A Number&Comments\\ \hline
 \texttt{{\char'134}table*}& 400& For wider tables\\ \hline\end{tabular}
 \end{table*}
 % end the environment with {table*}, NOTE not {table}!
-
-
 
 \section{Conclusions}
 ending stuff
