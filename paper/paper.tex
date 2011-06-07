@@ -104,17 +104,51 @@ Henry Hsieh\\
 as pipelining, out of order execution and operand forwarding.  However 
 these efforts come at a large power cost.  Out of order execution requires
 a ReOrder Buffer (ROB), to commit the registers in program order.  This 
-structure has grown to be monolithic numerous entries and read/write ports.
+structure has grown to be monolithic with numerous entries and read/write ports.
 There is no current methods to efficiently and equally compare various
-ROB advancements to improve power efficiency.  
+ROB advancements to improve power efficiency. We propose a loosely clycle
+accurate model that keeps track of the power usages of the ROB.  Using the 
+simulation tool, we are able to compare and contrast the affects of improvements
+made on the ROB.  This also allows for a first line test to validate proof of 
+concepts for future power efficient ROB designs. 
 \end{abstract}
 
-\terms{Theory}
+\terms{Power, Energy, Architecture}
 
-\keywords{ACM proceedings, \LaTeX, text tagging} % NOT required for Proceedings
+\keywords{Power efficiency, ROB, Simulation} % NOT required for Proceedings
 
 \section{Introduction}
 BLAH BLAH BLAH INTRO WEEEE
+\section{Background}
+    An out of order execution system has two additional stages 
+to the lifetime of the instruction on top of the traditional pipeline 
+stages.  Each of which a small memory array to keep track of instuction flow.
+The first addtion, the instruction queue(IQ) which holds instructions that are 
+waiting to be executed.  Each entry will hold the instruction -- including 
+type, operand registers, and destination registers.  The second structure 
+holds the instructions that are in flight but not yet commited to the register
+file. Each entry will hold both PC of the instruction, as well as the destination
+register and the result of the excution unit.  There is also a flag that will
+mark the result of the entry as valid.  
+
+Replacing the traditional instruction dispatch stage, An placeholder will be made for the 
+instruction in ReOrder Buffer (ROB), and the instructions will be placed
+in the instruction queue(IQ). In this stage instructions will first wait for their operands if not already
+available.  When all operands are available, the instruction is ready to 
+be executed so wait until its appropriate execution unit is free.  At this 
+point the instruction exits the IQ and begins execution.  
+
+Upon execution completion, the output value is stored in the ROB with its 
+corresponding entry and that entry is marked as valid or completed with a 
+1 bit flag.  An entry is commited from the ROB to the architectrual register
+file (ARF) when that entry is the oldest (lowest PC) and its result has been 
+marked as valid. 
+\subsection{Circular ROB}
+The circular ROB is 
+\subsection{Latch ROB}
+\subsection{Dynamic ROB}
+\subsection{Distributed ROB}
+
 \section{Project Implementation}
 	Our simulator provides a cycle accurate behavioral model of a standard circular re-order buffer.  At the outset of the project, the standard re-order buffer we intended to implement was a non-circular RAM-based re-order buffer.  However, after feedback from the course instructor and students it was decided that a circular buffer is more widely held as being the 'standard' buffer type and would serve as an ideal underlying model for power optimizations.  Thus, we implement and compare the standard circular re-order buffer to circular re-order buffers with the following optimizations: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch). The following sections outline each of the above model implementations as well as input instruction generation and power results tabulation.  
 \subsection{Instruction Generation}
@@ -139,7 +173,7 @@ Instruction Type&Cycle Count&Instruction Type&Cycle Count\\ \hline
 \begin{table*}
 \centering
 \begin{tabular}{|c|c|c|c|c|} \hline
-ins_profile&default_profile&173.applu&191.fma3d&183.equake\\ \hline
+ins\_profile&default\_profile&173.applu&191.fma3d&183.equake\\ \hline
 loadProc&0.10&0.32&0.12&0.37\\ \hline
 storeProc&0.10&0.12&0.24&0.06\\ \hline
 addProc&0.10&0.01&0.15&0.08\\ \hline
