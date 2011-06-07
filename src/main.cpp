@@ -115,7 +115,7 @@ int main (int argc, char *argv[])
 
     case MODE_LATCH:
       cout << "Retention latches" << endl;
-      rob = new ROB_Latch (rob_size, 3, 1, 4, print_flags);
+      rob = new ROB_Latch (rob_size, 3, 1, 16, print_flags);
       break;
 
     default: break;
