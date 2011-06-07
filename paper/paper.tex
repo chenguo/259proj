@@ -136,7 +136,24 @@ Instruction Type&Cycle Count&Instruction Type&Cycle Count\\ \hline
 	The instruction generator is currently capable of generating four distinct instruction streams corresponding to different instruction workloads.  The first instruction stream is marked as the default instruction stream.  It features equal percentages of each type of instruction as well as a 10% register dependence rate.  This register dependence rate was selected arbitrarily to act as a starting point for modeling data dependencies between instructions.
 	The remaining three instruction streams are modeled after SPEC-FP benchmarks.  The benchmarks were chosen to represent three major modes of operation:  floating point heavy execution, integer heavy execution, and mixed type execution.  For a floating point heavy execution, 173.applu was selected and modeled.  173.applu models parabolic/elliptical partial differential equations and features almost exclusively floating point operations as well as a large number of memory operations making it useful as both a floating point benchmark as well as a long running memory intensive benchmark.  191.fma3d is used to model integer heavy execution.  It models finite-element crash simulation and features very few floating point operations and substantially fewer memory operations than 173.applu making it an ideal light-weight integer workload.  Finally, 183.equake is used to represent the average workload.  It models seismic wave propagation and features both integer and floating point operations as well as moderate memory usage.  As such it acts as a more representative general workload than the original default workload.  Each of the SPEC-FP benchmarks feature a 6% register forwarding frequency as is reported by [XX paper ref].
 	For the purposes of our power comparisons, each of the above instruction workloads are normalized to generate 10000 instructions.  Such a large instruction window is ideal to allow buffers to fill and behavioral characteristics to develop.  The specific values used for each workload are listed in Table XX.
-
+\begin{table*}
+\centering
+\begin{tabular}{|c|c|c|c|c|} \hline
+ins_profile&default_profile&173.applu&191.fma3d&183.equake\\ \hline
+loadProc&0.10&0.32&0.12&0.37\\ \hline
+storeProc&0.10&0.12&0.24&0.06\\ \hline
+addProc&0.10&0.01&0.15&0.08\\ \hline
+subProc&0.10&0.01&0.15&0.08\\ \hline
+multProc&0.10&0.01&0.15&0.08\\ \hline
+divProc&0.10&0.01&0.15&0.08\\ \hline
+faddProc&0.10&0.13&0.01&0.07\\ \hline
+fsubProc&0.10&0.13&0.01&0.06\\ \hline
+fmultProc&0.10&0.13&0.01&0.06\\ \hline
+fdivProc&0.10&0.13&0.01&0.06\\ \hline
+forwardingRate&0.10&0.06&0.06&0.06\\ \hline
+instCount&10000&10000&10000&10000\\ \hline\end{tabular}
+\caption{Benchmark Instruction Profiles}
+\end{table*}
 \subsection{Model Implementation}
 \subsubsection{Circular ROB}
 \subsubsection{Distributed ROB}
