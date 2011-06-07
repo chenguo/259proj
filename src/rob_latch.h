@@ -40,7 +40,7 @@ class ROB_Latch : public ROB_Circ {
 
     void pre_cycle_power_snapshot();
     void post_cycle_power_tabulation();
-
+	void print_power_stats (int cycles);
 };
 
 #endif /* #ifndef ROB_LATCH_H */

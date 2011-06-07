@@ -12,7 +12,7 @@ ROB_Latch::ROB_Latch (int s, int in, int fn, int lsize, int pflags)
   : ROB_Circ (s, in, fn, pflags)
 {
   fwdcnt = 0;
-  m_lhead = 0 ;
+  m_lhead = lsize-1 ;
   m_ltail = 0;
   m_lsize = lsize;
 
@@ -80,7 +80,6 @@ void ROB_Latch::write_to_arf ()
                 fwdcnt++;
 
               if (m_print & DBG_FLAG)
-                cout << "Write from " << m_head << endl;
               Afwd[m_head] = false;
 
               m_head = (m_head + 1) % m_size;
@@ -248,17 +247,13 @@ bool ROB_Latch::ReadinLatch(uint16_t reg)
 
 void ROB_Latch::addToLatch(uint16_t reg, uint32_t data, bool fp)
 {
-  //if full get rid of the head
-  if(m_lhead == m_ltail)
-  {
-    m_lhead = ( m_lhead+1)%m_lsize;
-  }  
 
   lbuf[m_ltail].data = data;
   lbuf[m_ltail].reg_id = reg;
   lbuf[m_ltail].isfp = fp;
 
   m_ltail = ( m_ltail+1)%m_lsize;
+  m_lhead = ( m_lhead+1)%m_lsize;	
 
 }
 
@@ -303,5 +298,11 @@ void ROB_Latch::run (ins_t ins[])
 //  cout << "Simulation complete." << endl;
 }
 
-
+void ROB_Latch::print_power_stats (int cycles)
+{
+	ROB_Circ::print_power_stats(cycles);
+	cout <<"Total # times reforwarding is done: " << fwdcnt << endl<<endl ;
+	cout << "*NOTE: Written to DU count is from latches to the DU"<<endl<<endl;
+	
+}
 

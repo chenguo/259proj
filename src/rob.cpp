@@ -132,6 +132,13 @@ void ROB::print_power_stats (int cycles) {
   cout << "Total # bits remained low: " << p_totalBitsRemainedLow << endl;
   cout << "Total # bits remained high: " << p_totalBitsRemainedHigh << endl;
   cout << "Total # times reg comparator is used: "<< p_reg_comp_used << endl << endl;
+	
+  cout << "Total # times written to DU: " << m_nwdu << endl;
+  cout << "Total # times written to ARF: " << m_nwarf << endl;
+
+  cout << "Total # times read from IQ: " << m_nriq << endl ;
+  cout << "Total # times read from EX: " << m_nrex << endl ;
+  
   cout << endl;
 }
 
