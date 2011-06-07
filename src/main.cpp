@@ -21,7 +21,7 @@ enum {
 };
 
 void help ();
-ins_t *generate_instruction_stream();
+ins_t *generate_instruction_stream(int benchmark);
 int generate_type(ins_profile input, int gen);
 uint32_t generate_register(uint32_t history, float forwardRate);
 
@@ -31,12 +31,13 @@ int main (int argc, char *argv[])
   srand(2);
   char opt;
   int mode = MODE_BASE;
+  int bench = 0;
   ROB *rob;
   ins_t *instructions;
   int rob_size = 128;
   int print_flags = 1;
 
-  while ((opt = getopt (argc, argv, "dhm:")) != -1)
+  while ((opt = getopt (argc, argv, "dhm:b:")) != -1)
     {
       switch (opt)
         {
@@ -66,6 +67,20 @@ int main (int argc, char *argv[])
               return 1;
             }
           break;
+        case 'b':
+          if (strcmp(optarg, "0") == 0)
+            bench = 0;
+          else if (strcmp(optarg, "1") == 0)
+            bench = 1;
+          else if (strcmp(optarg, "2") == 0)
+            bench = 2;
+          else if (strcmp(optarg, "3") == 0)
+            bench = 3;
+          else {
+            cerr << "Unrecognized benchmark." << endl;
+            return 1;
+          }
+          break;
 
         default: break;
 
@@ -74,7 +89,7 @@ int main (int argc, char *argv[])
   srand (10);
 
   // For now, generate arbitrary mix of instructions.
-  instructions = generate_instruction_stream();
+  instructions = generate_instruction_stream(bench);
 
   switch (mode)
     {
@@ -122,14 +137,20 @@ void help ()
   cout << "  -d         Enable debug messages." << endl;
   cout << "  -h         Display this help message." << endl;
   cout << "  -m         Set operating mode. See \"Modes\"" << endl;
+  cout << "  -b         Set benchmark. See \"Benchmarks\"" << endl;
   cout << "Modes:" << endl;
   cout << "  circular   Circular ROB." << endl;
   cout << "  dynamic    Dynamically resized ROB." << endl;
   cout << "  dist       Distributed ROB." << endl;
   cout << "  latch      ROB with retention latches." << endl;
+  cout << "Benchmarks:" << endl;
+  cout << "  0          [Default] All ins types equally likely with above average operand forwarding rate (10%)." << endl;
+  cout << "  1          173.applu SPEC-FP Parabolic/Elliptic Partial Diff. Equations benchmark. Mostly FP ops." << endl;
+  cout << "  2          191.fma3d SPEC-FP Finite-element Crash Simulation benchmark. Mostly INT ops." << endl;
+  cout << "  3          183.equake SPEC-FP Seismic Wave Propagation benchmark.  Mix of FP and INT ops." << endl;
 }
 
-ins_t *generate_instruction_stream() {
+ins_t *generate_instruction_stream(int benchmark) {
   ins_profile default_profile;
   default_profile.loadProc = 0.10;
   default_profile.storeProc = 0.10;
@@ -144,7 +165,72 @@ ins_t *generate_instruction_stream() {
   default_profile.forwardingRate = 0.10;
   default_profile.instCount = 10000;
 
-  ins_profile input = default_profile;
+  ins_profile applu173_fp;
+  applu173_fp.loadProc = 0.32;
+  applu173_fp.storeProc = 0.12;
+  applu173_fp.addProc = 0.01;
+  applu173_fp.subProc = 0.01;
+  applu173_fp.multProc = 0.01;
+  applu173_fp.divProc = 0.01;
+  applu173_fp.faddProc = 0.13;
+  applu173_fp.fsubProc = 0.13;
+  applu173_fp.fmultProc = 0.13;
+  applu173_fp.fdivProc = 0.13;
+  applu173_fp.forwardingRate = 0.06;
+  applu173_fp.instCount = 10000;
+
+  ins_profile fma3d191_int;
+  fma3d191_int.loadProc = 0.12;
+  fma3d191_int.storeProc = 0.24;
+  fma3d191_int.addProc = 0.15;
+  fma3d191_int.subProc = 0.15;
+  fma3d191_int.multProc = 0.15;
+  fma3d191_int.divProc = 0.15;
+  fma3d191_int.faddProc = 0.01;
+  fma3d191_int.fsubProc = 0.01;
+  fma3d191_int.fmultProc = 0.01;
+  fma3d191_int.fdivProc = 0.01;
+  fma3d191_int.forwardingRate = 0.06;
+  fma3d191_int.instCount = 10000;
+
+  ins_profile equake183_mix;
+  equake183_mix.loadProc = 0.37;
+  equake183_mix.storeProc = 0.06;
+  equake183_mix.addProc = 0.08;
+  equake183_mix.subProc = 0.08;
+  equake183_mix.multProc = 0.08;
+  equake183_mix.divProc = 0.08;
+  equake183_mix.faddProc = 0.07;
+  equake183_mix.fsubProc = 0.06;
+  equake183_mix.fmultProc = 0.06;
+  equake183_mix.fdivProc = 0.06;
+  equake183_mix.forwardingRate = 0.06;
+  equake183_mix.instCount = 10000;
+
+
+  ins_profile input;
+  switch(benchmark) {
+    case 0:
+      cout << "Initializing default instruction profile." << endl;
+      input = default_profile;
+      break;
+    case 1:
+      cout << "Initilizing 173.applu SPEC-FP Parabolic/Elliptic Partial Diff. Equations benchmark. Emphasis on FP ops." << endl;
+      input = applu173_fp;
+      break;
+    case 2:
+      cout << "Initializing 191.fma3d SPEC-FP Finite-element Crash Simulation benchmark. Emphasis on INT ops." << endl;
+      input = fma3d191_int;
+      break;
+    case 3:
+      cout << "Initializing 183.equake SPEC-FP Seismic Wave Propagation benchmark.  Mix of both FP and INT ops." << endl;
+      input = equake183_mix;
+      break;
+    default:
+      input = default_profile;
+      break;
+  }
+
   uint32_t reg_history_buffer = 0x0;
   uint32_t regS1 = 0x0;
   uint32_t regS2 = 0x0;
