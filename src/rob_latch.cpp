@@ -267,7 +267,8 @@ void ROB_Latch::run (ins_t ins[])
       update_power_totals();
 
       cycles++;
-      print_msgs (cycles);
+      if (m_print & DBG_FLAG)
+        print_msgs (cycles);
 
 
       // Break when we've written all the instructions.
@@ -277,7 +278,7 @@ void ROB_Latch::run (ins_t ins[])
 
   print_power_stats(cycles);
 
-  cout << "Simulation complete." << endl;
+//  cout << "Simulation complete." << endl;
 }
 
 
