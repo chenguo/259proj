@@ -5,10 +5,10 @@ using namespace std;
 
 extern int ins_cyc[];
 
-ROB_Dyn::ROB_Dyn (int s, int in, int fn, int overflow, int parts, int pflags)
+ROB_Dyn::ROB_Dyn (int s, int in, int fn, int overflow, int parts, int pflags, bool opt)
   : ROB_Circ (s, in, fn, pflags)
 {
-  m_update_period = 512;
+  m_update_period = 2048;
   m_sample_period = 64;
   m_samples_taken = 0;
   m_current_size = s;
@@ -36,6 +36,8 @@ ROB_Dyn::ROB_Dyn (int s, int in, int fn, int overflow, int parts, int pflags)
           m_prev_parts[i].buf[j] = empty_entry;
         }
     }
+
+  m_opt = opt;
 
   /*
   int tmp = 0;
@@ -128,15 +130,20 @@ void ROB_Dyn::dyn_process (int cycles)
       //cout << "  Active: " << m_active_size;
       //cout << "  overflow " << m_overflow_cnt << endl;
 
-      if (m_current_size > m_active_size && m_current_size - m_active_size > m_part_size)
-        {
-          // Shrink buffer.
-          dyn_shrink (1);
-        }
       if (m_overflow_cnt > m_overflow_thresh)
         {
           // Grow buffer.
           dyn_grow (1);
+        }
+      else if (m_current_size > m_active_size && m_current_size - m_active_size > m_part_size)
+        {
+
+          int n_shrink = 1;
+          if (m_opt)
+            n_shrink = (m_current_size - m_active_size) / m_part_size;
+
+          // Shrink buffer.
+          dyn_shrink (n_shrink);
         }
 
       m_overflow_cnt = 0;

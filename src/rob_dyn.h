@@ -21,7 +21,7 @@ typedef struct partition {
 
 class ROB_Dyn : public ROB_Circ {
  public:
-  ROB_Dyn  (int s, int in, int fn, int overflow, int parts, int pflags);
+  ROB_Dyn  (int s, int in, int fn, int overflow, int parts, int pflags, bool opt);
   virtual ~ROB_Dyn ();
   virtual void run (ins_t instructions[]);
 
@@ -54,6 +54,7 @@ class ROB_Dyn : public ROB_Circ {
   uint32_t m_overflow_cnt;
   uint32_t m_overflow_thresh;
   uint32_t m_partition_cycles;
+  bool m_opt;
 };
 
 #endif // ROB_DYN_H
