@@ -34,7 +34,7 @@ typedef struct instruction {
   int type;
   uint32_t pc;
   uint16_t regs; // 4 bits each reg id, -blank-reg1,-reg2-regdest
-  bool exec; // true is already executed
+//  bool exec; // true is already executed
 } ins_t;
 
 // Enumerated instruction types.

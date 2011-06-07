@@ -27,7 +27,7 @@ class ROB_Latch : public ROB_Circ {
     lentry* lbuf;
     lentry* lbuf_prev;
 
-    void ReadinROB(uint16_t reg);
+    bool ReadinROB(uint16_t reg);
     bool ReadinLatch(uint16_t reg);
     uint32_t fwdcnt;
 

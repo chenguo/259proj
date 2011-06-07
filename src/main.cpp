@@ -248,13 +248,13 @@ ins_t *instructions = new ins_t [input.instCount+1];
       regD = rand()%0xF;
       reg_history_buffer = (reg_history_buffer << 4) | (regD&0xF);
       instructions[i].regs = ((regS1&0xF) << 8) | ((regS2&0xF) << 4) | (regD&0xF);
-      instructions[i].exec = false;
+//      instructions[i].exec = false;
       pc_start += 4;
-      cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS S1 S2 D= " << ((instructions[i].regs >> 8)&0xF) << " " << ((instructions[i].regs >> 4)&0xF) << " " << (instructions[i].regs&0xF) << " EXEC=" << instructions[i].exec << endl;
+      cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS S1 S2 D= " << ((instructions[i].regs >> 8)&0xF) << " " << ((instructions[i].regs >> 4)&0xF) << " " << (instructions[i].regs&0xF) << endl;
     }
   instructions[input.instCount].type = -1;
   instructions[input.instCount].pc = -1;
-  cout << "Type=" << instructions[input.instCount].type << " PC=" << instructions[input.instCount].pc << " REGS S1 S2 D= " << ((instructions[input.instCount].regs >> 8)&0xF) << " " << ((instructions[input.instCount].regs >> 4)&0xF) << " " << (instructions[input.instCount].regs&0xF) << " EXEC=" << instructions[input.instCount].exec << endl;
+  cout << "Type=" << instructions[input.instCount].type << " PC=" << instructions[input.instCount].pc << " REGS S1 S2 D= " << ((instructions[input.instCount].regs >> 8)&0xF) << " " << ((instructions[input.instCount].regs >> 4)&0xF) << " " << (instructions[input.instCount].regs&0xF) << endl;
 
   return instructions;
 }

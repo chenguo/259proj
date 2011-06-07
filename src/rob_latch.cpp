@@ -103,23 +103,41 @@ void ROB_Latch::write_to_arf ()
 // Read instructions from issue, up to m_n instructions.
 void ROB_Latch::write_entry (entry *entry, ins_t ins)
 {
-  uint16_t reg_mask = 0xF;
+	uint16_t reg_mask = 0xF;
+	entry->valid = false;
+	entry->cycles = ins_cyc[ins.type];
+	if (ins.type >= FADD)
+		entry->cycles += m_fp_delay;
+		entry->pc = ins.pc;
+		entry->reg_id = ins.regs & reg_mask;
+		entry->isfp = (ins.type >= FADD);
+		
+		m_tail = tail_incr (m_tail);
+		uint32_t operandRegA = ((ins.regs >> 4) & reg_mask);
+		uint32_t operandRegB = ((ins.regs >> 8) & reg_mask);
+		uint32_t extraCyclesA = 0;
+		uint32_t extraCyclesB = 0;
+		if(ReadinROB (operandRegA)) {
+			extraCyclesA = getCyclesToCompletion(operandRegA);
+			//cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
+			//m_nwdu++;
+		}
+	if(ReadinROB (operandRegB)) {
+		extraCyclesB = getCyclesToCompletion(operandRegB);
+		//cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
+		//m_nwdu++;
+	}
+	uint32_t maxExtraCycles = max(extraCyclesA, extraCyclesB);
+	if(maxExtraCycles)
+		//cout << "Increasing ins.pc=" << ins.pc << " cycle count by " << maxExtraCycles << " to allow forwarding" << endl;
+		entry->cycles += maxExtraCycles;
+		}
 
-  entry->valid = false;
-  entry->cycles = ins_cyc[ins.type];
-  if (ins.type >= FADD)
-    entry->cycles += m_fp_delay;
-  entry->pc = ins.pc;
-  entry->reg_id = ins.regs & reg_mask;
-  entry->isfp = (ins.type >= FADD);
 
-  m_tail = tail_incr (m_tail);
 
-  ReadinROB ((ins.regs >> 4) & reg_mask);
-  ReadinROB ((ins.regs >> 8) & reg_mask);
-}
 
-//TODO CHANGE add stuff
+
+
 void ROB_Latch::post_cycle_power_tabulation() {
   ROB_Circ::post_cycle_power_tabulation();
 
@@ -184,7 +202,7 @@ void ROB_Latch::pre_cycle_power_snapshot() {
 */
 }
 
-void ROB_Latch::ReadinROB(uint16_t reg)
+bool ROB_Latch::ReadinROB(uint16_t reg)
 {
 
   if (!m_empty)
@@ -194,11 +212,15 @@ void ROB_Latch::ReadinROB(uint16_t reg)
         {
           p_reg_comp_used++;
           if ( (m_buf[i].reg_id == reg)  && ! ReadinLatch(reg)  )
+		  {
             Afwd[i] = true;
-          i = (i + 1) % m_size;
+		   return true;
+		  }  
+		i = (i + 1) % m_size;
         }
       while (i != m_tail);
     }
+	return false;
 }
 
 
