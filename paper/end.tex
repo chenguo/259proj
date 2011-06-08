@@ -1,18 +1,46 @@
 \section{Results}
-hi
-\subsection{subsection titl}
-sub section.. with table!
+
 \begin{table*}
 \centering
-\caption{Some Typical Commands}
-\begin{tabular}{|c|c|l|} \hline
-Command&A Number&Comments\\ \hline
-\texttt{{\char'134}alignauthor} & 100& Author alignment\\ \hline
-\texttt{{\char'134}numberofauthors}& 200& Author enumeration\\ \hline
-\texttt{{\char'134}table}& 300 & For tables\\ \hline
-\texttt{{\char'134}table*}& 400& For wider tables\\ \hline\end{tabular}
+\caption{FP Heavy Instruction Profile Results(B1)}
+\begin{tabular}{|c|c|c|c|c|c|} \hline
+    & Circular  & Distrubuted & Dynamic & Dynamic (optimized) & OOP\\ \hline
+Cycles&82,722	&50,541&    	84,211	&84,078&        	82,153\\ \hline
+Bit Cycles&1,483,701,792&	1,399,581,372&	1,453,144,453	&1,470,555,825	&1,522,130,784\\ \hline
+Trans. to High&1,967,483&	1,719,957	&1,942,948	&1,930,476	&3,235,293\\ \hline
+Reg Comp&6,725,088&	6,631,913&	6,710,777&	6,718,043	&11,160,291\\ \hline
+\end{tabular}
 \end{table*}
-% end the environment with {table*}, NOTE not {table}!
+
+\begin{table*}
+\centering
+\caption{int Heavy Instruction Profile Results(B2)}
+\begin{tabular}{|c|c|c|c|c|c|} \hline
+    & Circular  & Distrubuted & Dynamic & Dynamic (optimized) & OOP\\ \hline
+Cycles&25,781&	25,794&	26,079	&25,783	&25,780\\ \hline
+Bit Cycles&462,408,016	&714,287,448	&310,408,263	&317,109,601	&477,651,840\\ \hline
+Trans. to High&1,347,679&	1,134,479	&1,363,418&	1,369,396	&2,262,036\\ \hline
+Reg Comp&3,220,687	&3,221,904	&3,219,866	&3,221,335&	5,155,838\\ \hline
+\end{tabular}
+\end{table*}
+
+
+\begin{table*}
+\centering
+\caption{Mix Instruction Profile Results(B3)}
+\begin{tabular}{|c|c|c|c|c|c|} \hline
+    & Circular  & Distrubuted & Dynamic & Dynamic (optimized) & OOP\\ \hline
+Cycles&29,858	&29,914	&31,733	&30,509	&29,845\\ \hline
+
+Bit Cycles&535,533,088&	828,378,488&	352,433,432	&342,715,483	&552,968,160\\ \hline
+
+Trans. to High&4,591,862	&4,585,663	&4,588,186&	4,603,780&	6,758,124\\ \hline
+
+Reg Comp&1,688,252&	1,436,544	&1,655,666	&1,657,563	&2,802,135\\ \hline
+\end{tabular}
+\end{table*}
+
+
 
 \section{Conclusions}
 ending stuff
