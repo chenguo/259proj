@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
   int bench = 0;
   ROB *rob;
   ins_t *instructions;
-  int rob_size = 128;
+  int rob_size = 256;
   int print_flags = 0;
 
   while ((opt = getopt (argc, argv, "dhm:b:")) != -1)
@@ -106,13 +106,13 @@ int main (int argc, char *argv[])
 
     case MODE_DYN:
       cout << "Dynamic" << endl;
-      // Overflow = 256, partitions = 8
-      rob = new ROB_Dyn (rob_size, 3, 1, 256, 16, print_flags, false);
+      // Overflow = 512, partitions = 16
+      rob = new ROB_Dyn (rob_size, 3, 1, 512, 16, print_flags, false);
       break;
 
     case MODE_DYNOPT:
       cout << "Dynamic Optimized" << endl;
-      rob = new ROB_Dyn (rob_size, 3, 1, 256, 16, print_flags, true);
+      rob = new ROB_Dyn (rob_size, 3, 1, 512, 16, print_flags, true);
       break;
 
     case MODE_DIST:
