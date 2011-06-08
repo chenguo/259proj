@@ -56,7 +56,7 @@ int main (int argc, char *argv[])
             mode = MODE_CIRC;
           else if (strcmp (optarg, "dynamic") == 0)
             mode = MODE_DYN;
-          else if (strcmp (optarg, "dynamic-opt") == 0)
+          else if (strcmp (optarg, "dyn-opt") == 0)
             mode = MODE_DYNOPT;
           else if (strcmp (optarg, "dist") == 0)
             mode = MODE_DIST;
