@@ -155,6 +155,13 @@ oldest instruction (which is at the head pointer), as well as which entry slots
 are used or empty.   However it may not be very power efficient if there is a large
 number of empty slots at any given point of the execution.    
 \subsection{Dynamic ROB}
+The dynamic ROB aims to reduce power by turning off portions of the buffer when they
+are not needed, and turning them back on when they become necessary. By partitioning
+the buffer into what is essentially smaller buffers, the complexity of each partition
+is reduced. Further, the ROB will then be custom sized to need, thus reducing energy
+wasted powering large stretches of empty entries. Due to the large percentage of energy
+consumption stemming from leakage power, turning off partitions contribute significant
+power savings over the base circular ROB.
 
 \subsection{Distributed ROB}
 
