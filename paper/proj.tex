@@ -136,3 +136,38 @@ The last case, that is the entry exists in the latches and not in the ROB, means
 (when the cycle counter expires -- execution has completed) we would add in the new entry to the retention latch.  Lastly when the ROB entires are valid, and ready to be committed to the ARF,
 if the forwarding flag is set, the forwarding counter is incremented.
 \subsection{Power Tabulation Implementation}
+In order for our simulation to determine the power utilization, we do not try and equate each event with an associated cost in joules.  As technology changes, and new techniques are 
+developed to decease circuit level power usages, our simulation will become less and less accurate.  Instead we chose to simply tabulate each event that is associated with 
+power cost, such as bit flips from 0 to 1, register comparator usage, and bit lines driven.  To help measure leakage power and overall states of the ROB, we also keep track of the 
+time (in cycles) each bit stays in the high state, or the low state. 
+
+At the start of each cycle 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
