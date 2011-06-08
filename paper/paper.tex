@@ -106,8 +106,8 @@ these efforts come at a large power cost.  Out of order execution requires
 a ReOrder Buffer (ROB), to commit the registers in program order.  This
 structure has grown to be monolithic with numerous entries and read/write ports.
 There is no current methods to efficiently and equally compare various
-ROB advancements to improve power efficiency. We propose a loosely clycle
-accurate model that keeps track of the power usages of the ROB.  Using the
+ROB advancements to improve power efficiency. We propose a loosely cycle
+accurate model that keeps track of the power usages of the ROB.  Using the 
 simulation tool, we are able to compare and contrast the affects of improvements
 made on the ROB.  This also allows for a first line test to validate proof of
 concepts for future power efficient ROB designs.
@@ -120,16 +120,16 @@ concepts for future power efficient ROB designs.
 \section{Introduction}
 BLAH BLAH BLAH INTRO WEEEE
 \section{Background}
-    An out of order execution system has two additional stages
-to the lifetime of the instruction on top of the traditional pipeline
-stages.  Each of which a small memory array to keep track of instuction flow.
-The first addtion, the instruction queue(IQ) which holds instructions that are
-waiting to be executed.  Each entry will hold the instruction -- including
-type, operand registers, and destination registers.  The second structure
-holds the instructions that are in flight but not yet commited to the register
+    An out of order execution system has two additional stages 
+to the lifetime of the instruction on top of the traditional pipeline 
+stages.  Each of which a small memory array to keep track of instruction flow.
+The first addition, the instruction queue(IQ) which holds instructions that are 
+waiting to be executed.  Each entry will hold the instruction -- including 
+type, operand registers, and destination registers.  The second structure 
+holds the instructions that are in flight but not yet committed to the register
 file. Each entry will hold both PC of the instruction, as well as the destination
-register and the result of the excution unit.  There is also a flag that will
-mark the result of the entry as valid.
+register and the result of the execution unit.  There is also a flag that will
+mark the result of the entry as valid.  
 
 Replacing the traditional instruction dispatch stage, An placeholder will be made for the
 instruction in ReOrder Buffer (ROB), and the instructions will be placed
@@ -138,11 +138,44 @@ available.  When all operands are available, the instruction is ready to
 be executed so wait until its appropriate execution unit is free.  At this
 point the instruction exits the IQ and begins execution.
 
-Upon execution completion, the output value is stored in the ROB with its
-corresponding entry and that entry is marked as valid or completed with a
-1 bit flag.  An entry is commited from the ROB to the architectrual register
-file (ARF) when that entry is the oldest (lowest PC) and its result has been
-marked as valid.
+Upon execution completion, the output value is stored in the ROB with its 
+corresponding entry and that entry is marked as valid or completed with a 
+1 bit flag.  An entry is committed from the ROB to the architectural register
+file (ARF) when that entry is the oldest (lowest PC) and its result has been 
+marked as valid. 
+\subsection{Circular ROB}
+The circular ROB is one of the most basic implementations of the ROB.  Simply using
+a circular buffer as the structure to hold each entry.  Since the ROB is basically
+just memory, there are two special slots for to keep track of the head and tail
+pointer to create the circular buffer.  As entries are written into the ROB, the
+entry is written at the tail pointer and then the tail pointer is incremented.
+Likewise when an entries is written to the ARF, the head pointer is incremented.
+The circular buffer method is widely used since it inherently keeps track of the 
+oldest instruction (which is at the head pointer), as well as which entry slots
+are used or empty.   However it may not be very power efficient if there is a large
+number of empty slots at any given point of the execution.    
+\subsection{Dynamic ROB}
+
+\subsection{Distributed ROB}
+
+\subsection{Latch ROB}
+In addition to large power requirement to maintain the entries of the ROB, another 
+large power consumer is the read ports of the ROB.  The read port of the ROB is used
+to forward the results of an entry to the dispatch unit (DU) to use as an operand.
+All though forwarding from the ROB occurs about 6\%\cite{kucuk} of all instructions 
+in an N way super scalar processor there are 2N ports (to accommodate FP
+ instructions) which add unnecessary complexity and power consumption for a small 
+percentage of instructions.  It has been proposed by eliminating the read ports 
+in the ROB all together, we can reduce energy consumption\cite{kucuk}.  However
+without read ports, a small window appears where the data cannot be accessed,
+starting from when the result is placed in to the ROB until the ROB commits that 
+entry to the ARF.  To help mitigate stalls that might happen due to this hole, 
+we introduce retention latches.   Retention latches are small memory elements and 
+we use them to cache the most recent results that have been written into the ROB.
+This way instructions are still able to access the most recently produced results
+and not stall.  However if the operand needed is not in the ROB, the stream will 
+stall until a commit is made to the ARF, and that result value is forwarded to 
+the dispatch unit immediately.
 
 \section{Project Implementation}
 Our simulator provides a cycle accurate behavioral model of a standard circular re-order buffer.  At the outset of the project, the standard re-order buffer we intended to implement was a non-circular RAM-based re-order buffer.  However, after feedback from the course instructor and students it was decided that a circular buffer is more widely held as being the 'standard' buffer type and would serve as an ideal underlying model for power optimizations.  Thus, we implement and compare the standard circular re-order buffer to circular re-order buffers with the following optimizations: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch). The following sections outline each of the above model implementations as well as input instruction generation and power results tabulation.
@@ -163,7 +196,7 @@ Instruction Type&Cycle Count&Instruction Type&Cycle Count\\ \hline
 
 We model the input to our simulator as a stream of integer and floatpoint instructions.  The instructions are represented at the bit-level and model MIPS instructions as closely as possible.  Each instruction consists of 1) Instruction type, 2) Source and destination registers 3) a PC.  Table ~\ref{tab:instypetable} indicates the types of instructions modeled.  Each instruction type also has a predetermined cycle execution time designating the number of cycles that must elapse between instruction issue and the completion of the instruction.  As modeling functional units goes beyond the scope of this simulator, instructions are flagged as complete after the listed number of cycles has elapsed.  The actual cycle counts are the same as those modeled in MIT's Graphite many-core processor simulator\cite{graphite}, with the exception of LOAD and STORE.  The cycle counts corresponding to LOAD and STORE instructions are estimated as a predetermined 20 cycles each.  This is simply an estimation as the actual cycle count is heavily dependent on cache architecture and benchmark specific cache behavior.  Since both of these topics are beyond the scope of the simulator, we estimate the completion time of LOAD and STORE instructions as a set value substantially longer than the other more accurate instruction types.
 
-Registers are generated in bit representation as 4 bits each totalling 12 bits for the s1, s2 and d registers in each instruction. Currently, our representation of instructions make no distinction between zero, 1, and 2 operand instructions.  All instructions regardless of type feature two operands.  This feature is supported by the fact that a memory hierarchy and functional units are not simulated by our system and as such immediate values have no direct use.  Further, every instruction features a d register regardless of type.  Because our simulator features operand forwarding from the ROB, it is necessary for the generation of registers to keep track of past destination registers to use as dependent operands in future instructions.  This history buffer is implemented as a rotating bit register from which prior destination registers can be indexed.
+Registers are generated in bit representation as 4 bits each totaling 12 bits for the s1, s2 and d registers in each instruction. Currently, our representation of instructions make no distinction between zero, 1, and 2 operand instructions.  All instructions regardless of type feature two operands.  This feature is supported by the fact that a memory hierarchy and functional units are not simulated by our system and as such immediate values have no direct use.  Further, every instruction features a d register regardless of type.  Because our simulator features operand forwarding from the ROB, it is necessary for the generation of registers to keep track of past destination registers to use as dependent operands in future instructions.  This history buffer is implemented as a rotating bit register from which prior destination registers can be indexed.
 
 Each instruction also features a program counter associated with the instruction.  While this is clearly a simplification of a real system, it serves the purposes of our simulation as a uniquely identifiable tag by which to differentiate instructions.  In both a real system and our simulator, a statically set 32 bit value is used to represent this PC/tag.  As such, the specific values contained in the PC/tag will yield accurate transition results (nonexistent) and is thus are irrelevant.  Simply starting the PC of the first instruction in the stream at 0 and incrementing by 4 each instruction guarantees uniqueness among PCs and serves the purposes of an instruction tag.
 
@@ -277,6 +310,8 @@ Gurhan Kucuk, Dmitry Ponomarev, and Kanad Ghose. 2002. Energy-Efficient Design o
 \bibitem{kucuk3}
 Gorhan Kucuk, Dmitry Ponomarev, and Kanad Ghose. 2001. Reducing Power Requirements of Instruction Scheduling Through Dynamic Allocation of Multiple Datapath Resources. In Proceedings of the International Symposium on Microarchitecture, December 2001.
 \bibitem{rupnow}
-Kyle Rupnow, Arun Rodrigues, Keith Underwood, and Katherine Compton. 2006. Scientific applications vs. SPEC-FP: a comparison of program behavior. In Proceedings of the 20th annual international conference on Supercomputing (ICS '06). ACM, New York, NY, USA, 66-74. DOI=10.1145/1183401.1183413 http://doi.acm.org/10.1145/1183401.1183413
+Kyle Rupnow, Arun Rodrigues, Keith Underwood, and Katherine Compton. 2006. Scientific applications vs. SPEC-FP: a comparison of program behavior. In Proceedings of the 20th annual international conference on Supercomputing (ICS '06). ACM, New York, NY, USA, 66-74. DOI=10.1145/1183401.1183413 http://doi.acm.org/10.1145/1183401.1183413 
+
+
 \end{thebibliography}
 \end{document}
