@@ -128,46 +128,11 @@ simulation a flag to denote that the entry is part of a floating point operation
 is committed to the ARF but also needs to be forwarded to the DU unit as well.  Though this is not an increasing number of ports driven, it may affect future power calculations relating to 
 capacitance.  Lastly as changing the semantic of the number of forwards to the DU, the count refers to the number time the entry is read from a retention latch.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+As a few minor changes to the behavioral function of the OOP ROB, the first of which is the lack of the ability to forward operands.  Thus in the simulated stage of reading from the instruction
+stream, when we would normally check if the operand is in the ROB and forward.  We instead do the following, we still check to see if the operand is in the ROB, and the retention latches. 
+If the entry is not in the ROB, or the latches, the operand would be available in the ARF or memory, in the converse case,  the entry in both, the ROB, and the latches, the operand is forwarded
+from the latches and the counter is incremented .  In the case that the entry exists in the ROB, but not in the latches, a flag would be set in the ROB to forward the result when committing to the ARF. 
+The last case, that is the entry exists in the latches and not in the ROB, means that the result has already been committed and the result could be forwarded from the ARF.  Next in our update entries 
+(when the cycle counter expires -- execution has completed) we would add in the new entry to the retention latch.  Lastly when the ROB entires are valid, and ready to be committed to the ARF,
+if the forwarding flag is set, the forwarding counter is incremented.
 \subsection{Power Tabulation Implementation}
