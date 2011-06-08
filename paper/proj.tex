@@ -73,45 +73,18 @@ time until execution completion. Also in this stage we check if operand forwardi
 requested by the IQ.  These three stages will repeat until the end of the instruction stream.
 
 \subsubsection{Distributed (Cluster based) ROB}
-Our distributed (cluster based) ROB is modeled similarly to the circular ROB.  Instead of having a single ROB buffer, 
-numerous ROB buffers are instantiated.  In a real system, there would be one ROB buffer for each functional 
-unit cluster.  However, since we do not model functional units in our simulator, we simply divide the ROB 
-into multiple smaller ROBs.  Each of these ROBs implement the default circular ROB model.  Each ROB segment 
-features a head pointer and a tail pointer and contains an equal portion of the total ROB space.  No further 
-enhancements need to be made to the default circular ROB model as the inclusion of the central FIFO allows the 
-ROB clusters to operate entirely independently of one another.  Each ROB might as well be the only ROB in the system. 
+Our distributed (cluster based) ROB is modeled similarly to the circular ROB.  Instead of having a single ROB buffer, numerous ROB buffers are instantiated.  In a real system, there would be one ROB buffer for each functional unit cluster.  However, since we do not model functional units in our simulator, we simply divide the ROB into multiple smaller ROBs.  Each of these ROBs implement the default circular ROB model.  Each ROB segment features a head pointer and a tail pointer and contains an equal portion of the total ROB space.  No further enhancements need to be made to the default circular ROB model as the inclusion of the central FIFO allows the ROB clusters to operate entirely independently of one another.  Each ROB might as well be the only ROB in the system.
 
-The largest modeling change required by the distributed ROB is the inclusion of the central FIFO queue.  This 
-FIFO queue is responsible for maintaining a global state of order between instructions in the different ROB buffers. 
-The FIFO queue is modeled as a modified circular buffer and each entry contains: 1) PC of instruction, 
-2) ROB{\char'137}ID where the instruction placeholder resides, and 3) a valid bit corresponding to the completion state of 
-the instruction.  The total number of entries in the FIFO queue is equal to the total entry size of the ROB.  
-Each active entry in the FIFO queue correlates with an active entry in one of the ROB clusters.  
+The largest modeling change required by the distributed ROB is the inclusion of the central FIFO queue.  This FIFO queue is responsible for maintaining a global state of order between instructions in the different ROB buffers. The FIFO queue is modeled as a modified circular buffer and each entry contains: 1) PC of instruction, 2) ROB{\char'137}ID where the instruction placeholder resides, and 3) a valid bit corresponding to the completion state of the instruction.  The total number of entries in the FIFO queue is equal to the total entry size of the ROB.  Each active entry in the FIFO queue correlates with an active entry in one of the ROB clusters.
 
-The distributed ROB requires only minor changes to the basic circular buffer to realize its effectiveness.  Instructions are 
-read from the Instruction Queue as usual and inserted into their corresponding ROB entry while updating the corresponding tail 
-pointer.  Since there are now multiple ROBs into which instructions can be inserted, a quick modulus is performed on the 
-destination register of the instruction to divide the instructions equally between each ROB.  This presents the possibility 
-for a worst-case situation where the entire instruction stream is blocked due to improper balancing between ROB clusters.  
-This situation would occur very rarely in practice and would induce no form of deadlock or livelock in the system -- 
-it would merely affect performance.  Possible avoidance techniques can be researched as future work.
+The distributed ROB requires only minor changes to the basic circular buffer to realize its effectiveness.  Instructions are read from the Instruction Queue as usual and inserted into their corresponding ROB entry while updating the corresponding tail pointer.  Since there are now multiple ROBs into which instructions can be inserted, a quick modulus is performed on the destination register of the instruction to divide the instructions equally between each ROB.  This presents the possibility for a worst-case situation where the entire instruction stream is blocked due to improper balancing between ROB clusters.  This situation would occur very rarely in practice and would induce no form of deadlock or livelock in the system -- it would merely affect performance.  Possible avoidance techniques can be researched as future work.
 
-At the same time as inserting the instruction from the IQ into the ROB cluster, an entry must be recorded in the central FIFO 
-queue to maintain global program order.  At this point, both the instruction PC and the recently determined ROB{\char'137}ID are 
-noted in the central FIFO queue.  The tail pointer of the central FIFO queue is increased accordingly to match.
+At the same time as inserting the instruction from the IQ into the ROB cluster, an entry must be recorded in the central FIFO queue to maintain global program order.  At this point, both the instruction PC and the recently determined ROB{\char'137}ID are noted in the central FIFO queue.  The tail pointer of the central FIFO queue is increased accordingly to match.
 
-Upon completion of an instruction, an instruction must be flagged as valid in both the ROB cluster in which it resides as well 
-as its corresponding central FIFO queue entry.  The central FIFO queue then directs the appropriate ROB to write the instruction 
-output to its write port when all prior instructions have been written so that program order is maintained.  This is the second 
-major behavioral difference between the circular ROB and the distributed ROB, as writes and write-order is driven and determined by 
-the central FIFO queue instead of the ROB cluster itself. 
+Upon completion of an instruction, an instruction must be flagged as valid in both the ROB cluster in which it resides as well as its corresponding central FIFO queue entry.  The central FIFO queue then directs the appropriate ROB to write the instruction output to its write port when all prior instructions have been written so that program order is maintained.  This is the second major behavioral difference between the circular ROB and the distributed ROB, as writes and write-order is driven and determined by the central FIFO queue instead of the ROB cluster itself.
 
 \subsubsection{Dynamically Sized ROB}
 The dynamically sized ROB is an optimization on the circular ROB where the buffer is divided into partitions, and those partitions deemed unnecessary are powered off to conserve energy. Our implementation of the basic dynamic ROB is behaviorally the same as that detailed in \cite{kucuk2}.
-
-Downsizing the ROB is based on a periodic sampling of the buffer state. A number of cycles, {\it update\_period}, is defined, and every {\it update\_period} cycles the size of the ROB is updated. Every {\it sample\_period} cycles, the number of active entries is recorded, and the quantity {\it active\_size} is recorded as the average of these samples between each {\it update\_period}. The current maximum capacity of the reorder buffer is defined as the {\it current\_size}, and the size of a single ROB partition is defined as {\it partition\_size}. After each {\it update\_period} cycles, the ROB checks how full the buffer is, and if {\it current\_size} - {\it active\_size} > {\it partition\_size}, then a single partition is turned off.
-
-Increasing the size of the ROB is dependent on how often the buffer fills up. A value, defined as the {\it overflow\_count} is incremented each cycle that instruction issue is stalled because the ROB is full. An {\it overflow\_threshold} is defined, and if during an {\it update\_period}, {\it overflow\_count} > {\it overflow\_threshold}, then a partition is turned on.
 
 A conservative approach of deallocating strictly from one end of the buffer, and allocating strictly towards that end is followed. For example, if the ROB consisted of four partitions, downsizing the buffer would turn off the fourth, and then the third. At this point, if we were to increase the size of the buffer, the third partition would be turned on first, and the fourth partition next.
 
@@ -137,34 +110,22 @@ In deallocating the buffer, turning off the first partition after the tail point
 One last optimization we implemented was just-in-time allocation of partitions. Normally, when the tail pointer increments, if a partition is not active the tail pointer simply skips it. In our optimization, before skipping the tail pointer will check if the disabled partition is marked to be enabled. If so, instead of skipping over it, the partition will be turned on and the tail pointer will write into it. This ensures that each partition to be turned on is enabled at the last possible moment, saving the energy that would otherwise be consumed by an empty partition waiting to be written into.
 
 \subsubsection{Omitted Output Port ROB (Retention Latch)}
-The main difference between the Circular ROB and the Omitted Output Port (OOP) ROB is that the OOP adds in a retention latches and is not allowed to forward any results directly to DU.  
-This our implementation of the OOP ROB simply extends the circular ROB, adding in a structure for the retention latches.  The latches is modeled very similar to the ROB entries, an array
-of a latch entry structure.  Each latch entry contains a 32 bit value for the results to be stored as well small tag to the corresponding destination register of the result.  As an artifact of our 
-simulation a flag to denote that the entry is part of a floating point operation is required as well.  Also an additional counter was added to count the additional re-forwarding when a value
-is committed to the ARF but also needs to be forwarded to the DU unit as well.  Though this is not an increasing number of ports driven, it may affect future power calculations relating to 
-capacitance.  Lastly as changing the semantic of the number of forwards to the DU, the count refers to the number time the entry is read from a retention latch.
+The main difference between the Circular ROB and the Omitted Output Port (OOP) ROB is that the OOP adds in a retention latches and is not allowed to forward any results directly to DU.  This our implementation of the OOP ROB simply extends the circular ROB, adding in a structure for the retention latches.  The latches is modeled very similar to the ROB entries, an array
+of a latch entry structure.  Each latch entry contains a 32 bit value for the results to be stored as well small tag to the corresponding destination register of the result.  As an artifact of our simulation a flag to denote that the entry is part of a floating point operation is required as well.  Also an additional counter was added to count the additional re-forwarding when a value is committed to the ARF but also needs to be forwarded to the DU unit as well.  Though this is not an increasing number of ports driven, it may affect future power calculations relating to capacitance.  Lastly as changing the semantic of the number of forwards to the DU, the count refers to the number time the entry is read from a retention latch.
 
-As a few minor changes to the behavioral function of the OOP ROB, the first of which is the lack of the ability to forward operands.  Thus in the simulated stage of reading from the instruction
-stream, when we would normally check if the operand is in the ROB and forward.  We instead do the following, we still check to see if the operand is in the ROB, and the retention latches. 
-If the entry is not in the ROB, or the latches, the operand would be available in the ARF or memory, in the converse case,  the entry in both, the ROB, and the latches, the operand is forwarded
-from the latches and the counter is incremented .  In the case that the entry exists in the ROB, but not in the latches, a flag would be set in the ROB to forward the result when committing to the ARF. 
-The last case, that is the entry exists in the latches and not in the ROB, means that the result has already been committed and the result could be forwarded from the ARF.  Next in our update entries 
-(when the cycle counter expires -- execution has completed) we would add in the new entry to the retention latch.  Lastly when the ROB entires are valid, and ready to be committed to the ARF,
+As a few minor changes to the behavioral function of the OOP ROB, the first of which is the lack of the ability to forward operands.  Thus in the simulated stage of reading from the instruction stream, when we would normally check if the operand is in the ROB and forward.  We instead do the following, we still check to see if the operand is in the ROB, and the retention latches. If the entry is not in the ROB, or the latches, the operand would be available in the ARF or memory, in the converse case,  the entry in both, the ROB, and the latches, the operand is forwarded from the latches and the counter is incremented .  In the case that the entry exists in the ROB, but not in the latches, a flag would be set in the ROB to forward the result when committing to the ARF. The last case, that is the entry exists in the latches and not in the ROB, means that the result has already been committed and the result could be forwarded from the ARF.  Next in our update entries (when the cycle counter expires -- execution has completed) we would add in the new entry to the retention latch.  Lastly when the ROB entires are valid, and ready to be committed to the ARF,
 if the forwarding flag is set, the forwarding counter is incremented.
-\subsection{Power Tabulation Implementation}
-In order for our simulation to determine the power utilization, we do not try and equate each event with an associated cost in joules.  As technology changes, and new techniques are 
-developed to decease circuit level power usages, our simulation will become less and less accurate.  Instead we chose to simply tabulate each event that is associated with 
-power cost, such as bit flips from 0 to 1, register comparator usage, and bit lines driven.  To help measure leakage power and overall states of the ROB, we also keep track of the 
-time (in cycles) each bit stays in the high state, or the low state. 
 
-At the start of each cycle the simulator take a snapshot of the entire ROB, this includes each ROB entry, head/tail pointers (circular ROB), forward flags (OOP ROB), and etc as the type 
-of ROB changes.  Then at the end of each cycle completion, we are able to compare which bits have changed, from low to high or high to low.   This results of the comparisons are tabulated
+\subsection{Power Tabulation Implementation}
+In order for our simulation to determine the power utilization, we do not try and equate each event with an associated cost in joules.  As technology changes, and new techniques are developed to decease circuit level power usages, our simulation will become less and less accurate.  Instead we chose to simply tabulate each event that is associated with power cost, such as bit flips from 0 to 1, register comparator usage, and bit lines driven.  To help measure leakage power and overall states of the ROB, we also keep track of the time (in cycles) each bit stays in the high state, or the low state.
+
+At the start of each cycle the simulator take a snapshot of the entire ROB, this includes each ROB entry, head/tail pointers (circular ROB), forward flags (OOP ROB), and etc as the type of ROB changes.  Then at the end of each cycle completion, we are able to compare which bits have changed, from low to high or high to low.   This results of the comparisons are tabulated
 and printed out at the of the simulation runs.  The checkpoint comparison allows the simulator to easily modularize power data collection for any type of ROB.
 
 The events that cannot be captured by the checkpoint comparison, is captured during the behavioral simulation.  These items are stateless such as comparators used, bit lines driven, and etc.
 As part of the behavioral simulation, the respective counters would simply be incremented as part of simulating the usage of the item.
 
-These final tabulations allow the user to fairly comparing the type and algorithm of the reorder buffer with our worrying about the circuit level technology underneath. 
+These final tabulations allow the user to fairly comparing the type and algorithm of the reorder buffer with our worrying about the circuit level technology underneath.
 
 
 
