@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <stdlib.h>
 
 #include "rob_dist.h"
 using namespace std;

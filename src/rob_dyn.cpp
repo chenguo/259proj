@@ -5,11 +5,11 @@ using namespace std;
 
 extern int ins_cyc[];
 
-ROB_Dyn::ROB_Dyn (int s, int in, int fn, int overflow, int parts, int pflags)
+ROB_Dyn::ROB_Dyn (int s, int in, int fn, int overflow, int parts, int pflags, bool opt)
   : ROB_Circ (s, in, fn, pflags)
 {
-  m_update_period = 512;
-  m_sample_period = 64;
+  m_update_period = 2048;
+  m_sample_period = 128;
   m_samples_taken = 0;
   m_current_size = s;
   m_active_size = 0;
@@ -36,6 +36,8 @@ ROB_Dyn::ROB_Dyn (int s, int in, int fn, int overflow, int parts, int pflags)
           m_prev_parts[i].buf[j] = empty_entry;
         }
     }
+
+  m_opt = opt;
 
   /*
   int tmp = 0;
@@ -68,6 +70,33 @@ void ROB_Dyn::run (ins_t ins[])
   while (1)
     {
       pre_cycle_power_snapshot ();
+
+      // Check for sanity: head and tail pointers must be in an enabled partition.
+      int head_part = m_head / m_part_size;
+      int tail_part = m_tail / m_part_size;
+
+      if (m_parts[head_part].state == DISABLED
+          || m_parts[head_part].state == TO_ENABLE
+          || m_parts[tail_part].state == DISABLED
+          || m_parts[tail_part].state == TO_ENABLE)
+        {
+          cerr << "CORRUPT BUFFER h:" << m_head << "  t:" << m_tail;
+
+          for (int i = 0; i < m_nparts; i++)
+            {
+              if (m_parts[i].state == DISABLED)
+                cerr << "  [ D]";
+              else if (m_parts[i].state == TO_DISABLE)
+                cerr << "  [TD]";
+              else if (m_parts[i].state == TO_ENABLE)
+                cerr << "  [TE]";
+              else if (m_parts[i].state == ENABLED)
+                cerr << "  [ E]";
+            }
+          cerr << endl;
+        }
+
+
 
       bool old_empty = m_empty;
       int old_ins_num = ins_num;
@@ -124,20 +153,28 @@ void ROB_Dyn::dyn_process (int cycles)
   // Update buffer size.
   if (cycles % m_update_period == 0)
     {
-      //cout << "Cur: " << m_current_size;
-      //cout << "  Active: " << m_active_size;
-      //cout << "  overflow " << m_overflow_cnt << endl;
+      //cerr << "Cur: " << m_current_size;
+      //cerr << "  Active: " << m_active_size;
+      //cerr << "  overflow " << m_overflow_cnt;
 
       if (m_current_size > m_active_size && m_current_size - m_active_size > m_part_size)
         {
+
+          int n_shrink = 1;
+          if (m_opt)
+            n_shrink = (m_current_size - m_active_size) / m_part_size;
+
           // Shrink buffer.
-          dyn_shrink (1);
+          dyn_shrink (n_shrink);
+          //cerr << "  Shrink " << n_shrink;
         }
-      if (m_overflow_cnt > m_overflow_thresh)
+      else if (m_overflow_cnt > m_overflow_thresh)
         {
           // Grow buffer.
           dyn_grow (1);
+          //cerr << "  Grow";
         }
+      //cerr << endl;
 
       m_overflow_cnt = 0;
       m_samples_taken = 0;
@@ -146,7 +183,8 @@ void ROB_Dyn::dyn_process (int cycles)
   // If possible to turn buffer marked TO_DISABLE off, or TO_ENABLE on, do so.
   for (int i = 0; i < m_nparts; i++)
     {
-      if (m_parts[i].state == TO_DISABLE || m_parts[i].state == TO_ENABLE)
+      // If optmized, we do just-in-time allocation, so we only handle disabling here.
+      if (m_opt && m_parts[i].state == TO_DISABLE)
         {
           uint32_t part_start = i * m_part_size;
           uint32_t part_end = part_start + m_part_size;
@@ -156,9 +194,24 @@ void ROB_Dyn::dyn_process (int cycles)
           // 2) Used region is after partition.
           // 3) Used region starts after partition and ends before partition
           //    after wrap around.
-          if ((m_head < m_tail && (m_tail < part_start || m_head >= part_end))
-              || (m_head > m_tail && (m_head >= part_end && m_tail < part_start))
+          // 3 comparators used: head to tail, head to part_end, tail to part_start
+          p_reg_comp_used += 3;
+          if ((m_tail < part_start && m_head >= part_end)
+              || (m_head < m_tail && (m_tail < part_start || m_head >= part_end))
               || (m_head == m_tail && m_empty))
+            {
+              m_parts[i].state = DISABLED;
+              m_current_size -= m_part_size;
+            }
+        }
+      else if (!m_opt && (m_parts[i].state == TO_DISABLE || m_parts[i].state == TO_ENABLE))
+        {
+          uint32_t part_start = i * m_part_size;
+
+          // State change if 0 <= m_head <= m_tail < part_start
+          // 3 comparators used
+          p_reg_comp_used += 3;
+          if (0 <= m_head && m_head <= m_tail && m_tail < part_start)
             {
               if (m_parts[i].state == TO_DISABLE)
                 {
@@ -180,19 +233,42 @@ void ROB_Dyn::dyn_shrink (int parts)
 {
   int disabled = 0;
   int i = m_nparts - 1;
-  while (disabled < parts && i >= 0)
+  if (m_opt)
     {
-      if (m_parts[i].state == ENABLED)
+      // Disable the first partition after the one
+      // the tail pointer is in.
+      int probe = ((m_tail / m_part_size) + 1) % m_nparts;
+      while (disabled < parts && i++ < m_nparts)
         {
-          m_parts[i].state = TO_DISABLE;
-          disabled++;
+          if (m_parts[probe].state == ENABLED)
+            {
+              m_parts[probe].state = TO_DISABLE;
+              disabled++;
+            }
+          else if (m_parts[probe].state == TO_ENABLE)
+            {
+              m_parts[probe].state = DISABLED;
+              disabled++;
+            }
+          probe = (probe + 1) % m_nparts;
         }
-      else if (m_parts[i].state == TO_ENABLE)
+    }
+  else
+    {
+      while (disabled < parts && i >= 0)
         {
-          m_parts[i].state = DISABLED;
-          disabled++;
+          if (m_parts[i].state == ENABLED)
+            {
+              m_parts[i].state = TO_DISABLE;
+              disabled++;
+            }
+          else if (m_parts[i].state == TO_ENABLE)
+            {
+              m_parts[i].state = DISABLED;
+              disabled++;
+            }
+          i--;
         }
-      i--;
     }
 }
 
@@ -201,19 +277,39 @@ void ROB_Dyn::dyn_grow (int parts)
 {
   int enabled = 0;
   int i = 0;
-  while (enabled < parts && i < m_nparts)
+  if (m_opt)
     {
-      if (m_parts[i].state == DISABLED)
+      // Enable the first partition after the one the
+      // tail pointer is in.
+      int probe = ((m_tail / m_part_size) + 1) % m_nparts;
+      while (enabled < parts && i++ < m_nparts)
         {
-          m_parts[i].state = TO_ENABLE;
-          enabled++;
+          if (m_parts[probe].state == DISABLED)
+            {
+              m_parts[probe].state = TO_ENABLE;
+              enabled++;
+            }
+          else if (m_parts[probe].state == TO_DISABLE)
+            {
+              m_parts[probe].state = ENABLED;
+              enabled++;
+            }
+          probe = (probe + 1) % m_nparts;
         }
-      else if (m_parts[i].state == TO_DISABLE)
-        {
-          m_parts[i].state = ENABLED;
-          enabled++;
-        }
-      i++;
+    }
+  else
+    {
+      while (enabled < parts && i++ < m_nparts)
+        if (m_parts[i].state == DISABLED)
+          {
+            m_parts[i].state = TO_ENABLE;
+            enabled++;
+          }
+        else if (m_parts[i].state == TO_DISABLE)
+          {
+            m_parts[i].state = ENABLED;
+            enabled++;
+          }
     }
 }
 
@@ -264,6 +360,38 @@ uint32_t ROB_Dyn::tail_incr (uint32_t tail_ptr)
   return tail_ptr;
 }
 
+// Increment a tail pointer by one. If dynamic buffer is running in optimized mode,
+// then if a TO_ENABLE partition is encountered it will be turned on.
+uint32_t ROB_Dyn::tail_incr_update (uint32_t tail_ptr)
+{
+  tail_ptr = (tail_ptr + 1) % m_size;
+  if (tail_ptr % m_part_size == 0)
+    {
+      // Pointer incremented to next partition. Make sure it's a valid one.
+      int part_num = tail_ptr / m_part_size;
+      while (m_parts[part_num].state != ENABLED)
+        {
+          if (m_parts[part_num].state == TO_ENABLE)
+            {
+              // If the encountered partition is marked to be enabled,
+              // enable it.
+              m_parts[part_num].state = ENABLED;
+              //cerr << "Enable" << endl;
+              break;
+            }
+          else if (++part_num == m_nparts)
+            {
+              // If pointer runs off end, put it at beginning.
+              part_num = 0;
+              tail_ptr = 0;
+            }
+          else
+            tail_ptr += m_part_size;
+        }
+    }
+  return tail_ptr;
+}
+
 // Get the entry associated with the pointer.
 entry_t *ROB_Dyn::get_entry (uint32_t ptr)
 {
@@ -278,6 +406,42 @@ entry_t *ROB_Dyn::get_prev_buf_entry (uint32_t ptr)
   int off = ptr % m_part_size;
   return &m_prev_parts[part].buf[off];
 }
+
+// Just like ROB_Circ's write_entry(), except tail_incr_update is called instead of
+// tail_incr.
+void ROB_Dyn::write_entry (entry *entry, ins_t ins)
+{
+  uint16_t reg_mask = 0xF;
+  entry->valid = false;
+  entry->cycles = ins_cyc[ins.type];
+  if (ins.type >= FADD)
+    entry->cycles += m_fp_delay;
+  entry->pc = ins.pc;
+  entry->reg_id = ins.regs & reg_mask;
+  entry->isfp = (ins.type >= FADD);
+
+  m_tail = tail_incr_update (m_tail);
+
+  uint32_t operandRegA = ((ins.regs >> 4) & reg_mask);
+  uint32_t operandRegB = ((ins.regs >> 8) & reg_mask);
+  uint32_t extraCyclesA = 0;
+  uint32_t extraCyclesB = 0;
+  if(isinROB (operandRegA)) {
+    extraCyclesA = getCyclesToCompletion(operandRegA);
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
+    m_nwdu++;
+  }
+  if(isinROB (operandRegB)) {
+    extraCyclesB = getCyclesToCompletion(operandRegB);
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
+    m_nwdu++;
+  }
+  uint32_t maxExtraCycles = max(extraCyclesA, extraCyclesB);
+  if(maxExtraCycles)
+    //cout << "Increasing ins.pc=" << ins.pc << " cycle count by " << maxExtraCycles << " to allow forwarding" << endl;
+  entry->cycles += maxExtraCycles;
+}
+
 
 void ROB_Dyn::error_diag ()
 {

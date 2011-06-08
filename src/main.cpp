@@ -16,26 +16,25 @@ enum {
   MODE_BASE,
   MODE_CIRC,
   MODE_DYN,
+  MODE_DYNOPT,
   MODE_DIST,
   MODE_LATCH
 };
 
 void help ();
-ins_t *generate_instruction_stream(int benchmark);
+ins_t *generate_instruction_stream(int benchmark, int print_flags);
 int generate_type(ins_profile input, int gen);
 uint32_t generate_register(uint32_t history, float forwardRate);
 
 int main (int argc, char *argv[])
 {
-  //srand ( time(NULL) );
-  srand(2);
   char opt;
   int mode = MODE_BASE;
   int bench = 0;
   ROB *rob;
   ins_t *instructions;
   int rob_size = 128;
-  int print_flags = 1;
+  int print_flags = 0;
 
   while ((opt = getopt (argc, argv, "dhm:b:")) != -1)
     {
@@ -57,6 +56,8 @@ int main (int argc, char *argv[])
             mode = MODE_CIRC;
           else if (strcmp (optarg, "dynamic") == 0)
             mode = MODE_DYN;
+          else if (strcmp (optarg, "dynamic-opt") == 0)
+            mode = MODE_DYNOPT;
           else if (strcmp (optarg, "dist") == 0)
             mode = MODE_DIST;
           else if (strcmp (optarg, "latch") == 0)
@@ -89,7 +90,7 @@ int main (int argc, char *argv[])
   srand (10);
 
   // For now, generate arbitrary mix of instructions.
-  instructions = generate_instruction_stream(bench);
+  instructions = generate_instruction_stream(bench, print_flags);
 
   switch (mode)
     {
@@ -105,7 +106,13 @@ int main (int argc, char *argv[])
 
     case MODE_DYN:
       cout << "Dynamic" << endl;
-      rob = new ROB_Dyn (rob_size, 3, 1, 256, 8, print_flags);
+      // Overflow = 256, partitions = 8
+      rob = new ROB_Dyn (rob_size, 3, 1, 256, 16, print_flags, false);
+      break;
+
+    case MODE_DYNOPT:
+      cout << "Dynamic Optimized" << endl;
+      rob = new ROB_Dyn (rob_size, 3, 1, 256, 16, print_flags, true);
       break;
 
     case MODE_DIST:
@@ -150,7 +157,7 @@ void help ()
   cout << "  3          183.equake SPEC-FP Seismic Wave Propagation benchmark.  Mix of FP and INT ops." << endl;
 }
 
-ins_t *generate_instruction_stream(int benchmark) {
+ins_t *generate_instruction_stream(int benchmark, int print_flags) {
   ins_profile default_profile;
   default_profile.loadProc = 0.10;
   default_profile.storeProc = 0.10;
@@ -163,7 +170,7 @@ ins_t *generate_instruction_stream(int benchmark) {
   default_profile.fmultProc = 0.10;
   default_profile.fdivProc = 0.10;
   default_profile.forwardingRate = 0.10;
-  default_profile.instCount = 10000;
+  default_profile.instCount = 100000;
 
   ins_profile applu173_fp;
   applu173_fp.loadProc = 0.32;
@@ -177,7 +184,7 @@ ins_t *generate_instruction_stream(int benchmark) {
   applu173_fp.fmultProc = 0.13;
   applu173_fp.fdivProc = 0.13;
   applu173_fp.forwardingRate = 0.06;
-  applu173_fp.instCount = 10000;
+  applu173_fp.instCount = 100000;
 
   ins_profile fma3d191_int;
   fma3d191_int.loadProc = 0.12;
@@ -191,7 +198,7 @@ ins_t *generate_instruction_stream(int benchmark) {
   fma3d191_int.fmultProc = 0.01;
   fma3d191_int.fdivProc = 0.01;
   fma3d191_int.forwardingRate = 0.06;
-  fma3d191_int.instCount = 10000;
+  fma3d191_int.instCount = 100000;
 
   ins_profile equake183_mix;
   equake183_mix.loadProc = 0.37;
@@ -205,7 +212,7 @@ ins_t *generate_instruction_stream(int benchmark) {
   equake183_mix.fmultProc = 0.06;
   equake183_mix.fdivProc = 0.06;
   equake183_mix.forwardingRate = 0.06;
-  equake183_mix.instCount = 10000;
+  equake183_mix.instCount = 100000;
 
 
   ins_profile input;
@@ -238,7 +245,8 @@ ins_t *generate_instruction_stream(int benchmark) {
 
 ins_t *instructions = new ins_t [input.instCount+1];
   int pc_start = 0;
-  cout << "Instruction stream:" << endl;
+  if (print_flags & DBG_FLAG)
+    cout << "Instruction stream:" << endl;
   for (int i = 0; i < input.instCount; i++)
     {
       instructions[i].type = generate_type(input,(rand()%100));
@@ -250,21 +258,25 @@ ins_t *instructions = new ins_t [input.instCount+1];
       instructions[i].regs = ((regS1&0xF) << 8) | ((regS2&0xF) << 4) | (regD&0xF);
 //      instructions[i].exec = false;
       pc_start += 4;
-      cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS S1 S2 D= " << ((instructions[i].regs >> 8)&0xF) << " " << ((instructions[i].regs >> 4)&0xF) << " " << (instructions[i].regs&0xF) << endl;
+      if (print_flags & DBG_FLAG) {
+          cout << "Type=" << instructions[i].type << " PC=" << instructions[i].pc << " REGS S1 S2 D= " << ((instructions[i].regs >> 8)&0xF) << " " << ((instructions[i].regs >> 4)&0xF) << " " << (instructions[i].regs&0xF) << endl;
+      }
     }
   instructions[input.instCount].type = -1;
   instructions[input.instCount].pc = -1;
-  cout << "Type=" << instructions[input.instCount].type << " PC=" << instructions[input.instCount].pc << " REGS S1 S2 D= " << ((instructions[input.instCount].regs >> 8)&0xF) << " " << ((instructions[input.instCount].regs >> 4)&0xF) << " " << (instructions[input.instCount].regs&0xF) << endl;
+  if (print_flags & DBG_FLAG) {
+    cout << "Type=" << instructions[input.instCount].type << " PC=" << instructions[input.instCount].pc << " REGS S1 S2 D= " << ((instructions[input.instCount].regs >> 8)&0xF) << " " << ((instructions[input.instCount].regs >> 4)&0xF) << " " << (instructions[input.instCount].regs&0xF) << endl;
+  }
 
   return instructions;
 }
 
 uint32_t generate_register(uint32_t history, float forwardRate) {
   int seed = rand();
-  if((float)(seed%100)/100.0 < forwardRate) { 
+  if((float)(seed%100)/100.0 < forwardRate) {
     //cout << "Dependency occurred" << endl;
     return (history>>(4*(seed%8))&(0xF));
-  } else 
+  } else
     return (seed%0xF);
 }
 
