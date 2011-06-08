@@ -170,7 +170,12 @@ in the ROB all together, we can reduce energy consumption\cite{kucuk}.  However
 without read ports, a small window appears where the data cannot be accessed,
 starting from when the result is placed in to the ROB until the ROB commits that 
 entry to the ARF.  To help mitigate stalls that might happen due to this hole, 
-we introduce retention latches.     
+we introduce retention latches.   Retention latches are small memory elements and 
+we use them to cache the most recent results that have been written into the ROB.
+This way instructions are still able to access the most recently produced results
+and not stall.  However if the operand needed is not in the ROB, the stream will 
+stall until a commit is made to the ARF, and that result value is forwarded to 
+the dispatch unit immediately.
 
 \section{Project Implementation}
 Our simulator provides a cycle accurate behavioral model of a standard circular re-order buffer.  At the outset of the project, the standard re-order buffer we intended to implement was a non-circular RAM-based re-order buffer.  However, after feedback from the course instructor and students it was decided that a circular buffer is more widely held as being the 'standard' buffer type and would serve as an ideal underlying model for power optimizations.  Thus, we implement and compare the standard circular re-order buffer to circular re-order buffers with the following optimizations: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch). The following sections outline each of the above model implementations as well as input instruction generation and power results tabulation.  
