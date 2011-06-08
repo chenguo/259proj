@@ -44,13 +44,20 @@ power savings over the base circular ROB.
 
 \subsection{Distributed ROB}
 An accepted optimization for improving the power consumption of an ROB unit 
-is to break up the ROB buffer into clusters REF[XXX].  In this organization, the in-flight 
+is to break up the ROB buffer into clusters \cite{rabaey}.  In this organization shown in Figure ~\ref{fig:distrob}, 
+the in-flight 
 instruction information is distributed across all of the units and then re-assembled 
 back into program order after the fact.  The primary advantage of this approach 
 is that it dramatically lessens the size of the individual ROB units.  This reduces overall
 power by reducing the bit line width as well as unit capacitance.
 
-...IMAGE FROM OUR SLIDES...
+\begin{figure*}
+\centering
+\includegraphics[height=2in]{clusterROB.png}
+\caption{Distributed ROB layout}
+\label{fig:distrob}
+\end{figure*}
+
 
 The overhead associated with this scheme is that the addition of a separate FIFO unit
 is required to maintain a global state of instruction order between the separate ROB units.
@@ -70,7 +77,7 @@ distributed ROB model features only a single write port per ROB cluster.  As a r
 can be forwarded at a time from the ROB.  In the rare case that an instruction requires two operands be 
 forwarded from the same ROB cluster a delay of one cycle is imposed while the operands are forwarded 
 sequentially.  It is reported, however, that this happens very rarely in practice and induces less than 1\% 
-performance degradation REF[XXX].
+performance degradation \cite{rabaey}.
 \subsection{Latch ROB}
 In addition to large power requirement to maintain the entries of the ROB, another 
 large power consumer is the read ports of the ROB.  The read port of the ROB is used
