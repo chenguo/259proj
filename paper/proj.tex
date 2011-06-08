@@ -118,9 +118,56 @@ In allocating the buffer, the reasoning is as follows. We aim to enable a disabl
 
 In deallocating the buffer, turning off the first partition after the tail pointer is also optimal. Being after the tail pointer, once we mark the partition for disabling we can prevent the tail pointer from writing into it. This prevents the worst case scenario where the head pointer must wrap around 0 twice to disable a partition. The next enabled partition immediately after the tail pointer is also the one the active region will leave first (if the region is in the partition; if not the partition is already empty and ready to deactivate), thus it will empty out first. If we are to maximize the power savings, we must disable the first partition that is available to be disabled, thus the first active partition after the tail is the optimal choice.
 
-One last optmization we implemented was just-in-time allocation of partitions. Normally, when the tail pointer increments, if a partition is not active the tail pointer simply skips it. In our optimization, before skipping the tail pointer will check if the disabled partition is marked to be enabled. If so, instead of skipping over it, the partition will be turned on and the tail pointer will write into it. This ensures that each partition to be turned on is enabled at the last possible moment, saving the energy that would otherwise be consumed by an empty partition waiting to be written into.
+One last optimization we implemented was just-in-time allocation of partitions. Normally, when the tail pointer increments, if a partition is not active the tail pointer simply skips it. In our optimization, before skipping the tail pointer will check if the disabled partition is marked to be enabled. If so, instead of skipping over it, the partition will be turned on and the tail pointer will write into it. This ensures that each partition to be turned on is enabled at the last possible moment, saving the energy that would otherwise be consumed by an empty partition waiting to be written into.
 
-\subsubsection{Reduced Output Port ROB (Retention Latch)}
+\subsubsection{Omitted Output Port ROB (Retention Latch)}
+The main difference between the Circular ROB and the Omitted Output Port (OOP) ROB is that the OOP adds in a retention latches and is not allowed to forward any results directly to DU.  
+This our implementation of the OOP ROB simply extends the circular ROB, adding in a structure for the retention latches.  The latches is modeled very similar to the ROB entries, an array
+of a latch entry structure.  Each latch entry contains a 32 bit value for the results to be stored as well small tag to the corresponding destination register of the result.  As an artifact of our 
+simulation a flag to denote that the entry is part of a floating point operation is required as well.  Also an additional counter was added to count the additional re-forwarding when a value
+is committed to the ARF but also needs to be forwarded to the DU unit as well.  Though this is not an increasing number of ports driven, it may affect future power calculations relating to 
+capacitance.  Lastly as changing the semantic of the number of forwards to the DU, the count refers to the number time the entry is read from a retention latch.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 \subsection{Power Tabulation Implementation}

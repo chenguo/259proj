@@ -86,8 +86,9 @@ All though forwarding from the ROB occurs about 6\%\cite{kucuk} of all instructi
 in an N way super scalar processor there are 2N ports (to accommodate FP
  instructions) which add unnecessary complexity and power consumption for a small 
 percentage of instructions.  It has been proposed by eliminating the read ports 
-in the ROB all together, we can reduce energy consumption\cite{kucuk}.  However
-without read ports, a small window appears where the data cannot be accessed,
+in the ROB all together, we can reduce energy consumption\cite{kucuk}.
+
+However without read ports, a small window appears where the data cannot be accessed,
 starting from when the result is placed in to the ROB until the ROB commits that 
 entry to the ARF.  To help mitigate stalls that might happen due to this hole, 
 we introduce retention latches.   Retention latches are small memory elements and 
