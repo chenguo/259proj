@@ -1,0 +1,92 @@
+\section{Background}
+    An out of order execution system has two additional stages 
+to the lifetime of the instruction on top of the traditional pipeline 
+stages.  Each of which a small memory array to keep track of instruction flow.
+The first addition, the instruction queue(IQ) which holds instructions that are 
+waiting to be executed.  Each entry will hold the instruction -- including 
+type, operand registers, and destination registers.  The second structure 
+holds the instructions that are in flight but not yet committed to the register
+file. Each entry will hold both PC of the instruction, as well as the destination
+register and the result of the execution unit.  There is also a flag that will
+mark the result of the entry as valid.  
+
+Replacing the traditional instruction dispatch stage, An placeholder will be made for the
+instruction in ReOrder Buffer (ROB), and the instructions will be placed
+in the instruction queue(IQ). In this stage instructions will first wait for their operands if not already
+available.  When all operands are available, the instruction is ready to
+be executed so wait until its appropriate execution unit is free.  At this
+point the instruction exits the IQ and begins execution.
+
+Upon execution completion, the output value is stored in the ROB with its 
+corresponding entry and that entry is marked as valid or completed with a 
+1 bit flag.  An entry is committed from the ROB to the architectural register
+file (ARF) when that entry is the oldest (lowest PC) and its result has been 
+marked as valid. 
+\subsection{Circular ROB}
+The circular ROB is one of the most basic implementations of the ROB.  Simply using
+a circular buffer as the structure to hold each entry.  Since the ROB is basically
+just memory, there are two special slots for to keep track of the head and tail
+pointer to create the circular buffer.  As entries are written into the ROB, the
+entry is written at the tail pointer and then the tail pointer is incremented.
+Likewise when an entries is written to the ARF, the head pointer is incremented.
+The circular buffer method is widely used since it inherently keeps track of the 
+oldest instruction (which is at the head pointer), as well as which entry slots
+are used or empty.   However it may not be very power efficient if there is a large
+number of empty slots at any given point of the execution.    
+\subsection{Dynamic ROB}
+The dynamic ROB aims to reduce power by turning off portions of the buffer when they
+are not needed, and turning them back on when they become necessary. By partitioning
+the buffer into what is essentially smaller buffers, the complexity of each partition
+is reduced. Further, the ROB will then be custom sized to need, thus reducing energy
+wasted powering large stretches of empty entries. Due to the large percentage of energy
+consumption stemming from leakage power, turning off partitions contribute significant
+power savings over the base circular ROB.
+
+\subsection{Distributed ROB}
+An accepted optimization for improving the power consumption of an ROB unit 
+is to break up the ROB buffer into clusters REF[XXX].  In this organization, the in-flight 
+instruction information is distributed across all of the units and then re-assembled 
+back into program order after the fact.  The primary advantage of this approach 
+is that it dramatically lessens the size of the individual ROB units.  This reduces overall
+power by reducing the bit line width as well as unit capacitance.
+
+...IMAGE FROM OUR SLIDES...
+
+The overhead associated with this scheme is that the addition of a separate FIFO unit
+is required to maintain a global state of instruction order between the separate ROB units.
+This central FIFO unit is then referenced upon instruction re-order to commit the instructions
+in program order.  The contents of the FIFO unit are fairly simple and incur reasonable hardware
+overhead.  Each entry needs only contain the PC of the instruction (or some other unique identifier)
+and the corresponding ROB unit that houses the placeholder of the instruction as it is in-flight. 
+The total ROB bit storage count remains the same from the non-distributed model to the distributed model
+as the overall size of the ROB remains the same.  However, the inclusion of the central FIFO queue 
+induces some overhead bits that must be considered when analyzing the overall effectiveness of the 
+model.  
+
+The distribution or clustering of the ROB unit also inherently induces a minimal performance overhead 
+in particular cases.  By breaking the ROB into smaller pieces and distributing the instruction 
+data across the unit, the placement of instructions becomes a performance factor.  Typically, a 
+distributed ROB model features only a single write port per ROB cluster.  As a result only one operand 
+can be forwarded at a time from the ROB.  In the rare case that an instruction requires two operands be 
+forwarded from the same ROB cluster a delay of one cycle is imposed while the operands are forwarded 
+sequentially.  It is reported, however, that this happens very rarely in practice and induces less than 1\% 
+performance degradation REF[XXX].
+\subsection{Latch ROB}
+In addition to large power requirement to maintain the entries of the ROB, another 
+large power consumer is the read ports of the ROB.  The read port of the ROB is used
+to forward the results of an entry to the dispatch unit (DU) to use as an operand.
+All though forwarding from the ROB occurs about 6\%\cite{kucuk} of all instructions 
+in an N way super scalar processor there are 2N ports (to accommodate FP
+ instructions) which add unnecessary complexity and power consumption for a small 
+percentage of instructions.  It has been proposed by eliminating the read ports 
+in the ROB all together, we can reduce energy consumption\cite{kucuk}.  However
+without read ports, a small window appears where the data cannot be accessed,
+starting from when the result is placed in to the ROB until the ROB commits that 
+entry to the ARF.  To help mitigate stalls that might happen due to this hole, 
+we introduce retention latches.   Retention latches are small memory elements and 
+we use them to cache the most recent results that have been written into the ROB.
+This way instructions are still able to access the most recently produced results
+and not stall.  However if the operand needed is not in the ROB, the stream will 
+stall until a commit is made to the ARF, and that result value is forwarded to 
+the dispatch unit immediately.
+
