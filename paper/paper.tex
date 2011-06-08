@@ -100,17 +100,17 @@ Henry Hsieh\\
 
 \maketitle
 \begin{abstract}
-	In an effort to increase instruction level parallelism techniques such 
-as pipelining, out of order execution and operand forwarding.  However 
+        In an effort to increase instruction level parallelism techniques such
+as pipelining, out of order execution and operand forwarding.  However
 these efforts come at a large power cost.  Out of order execution requires
-a ReOrder Buffer (ROB), to commit the registers in program order.  This 
+a ReOrder Buffer (ROB), to commit the registers in program order.  This
 structure has grown to be monolithic with numerous entries and read/write ports.
 There is no current methods to efficiently and equally compare various
-ROB advancements to improve power efficiency. We propose a loosely clycle
+ROB advancements to improve power efficiency. We propose a loosely cycle
 accurate model that keeps track of the power usages of the ROB.  Using the 
 simulation tool, we are able to compare and contrast the affects of improvements
-made on the ROB.  This also allows for a first line test to validate proof of 
-concepts for future power efficient ROB designs. 
+made on the ROB.  This also allows for a first line test to validate proof of
+concepts for future power efficient ROB designs.
 \end{abstract}
 
 \terms{Power, Energy, Architecture}
@@ -122,29 +122,47 @@ BLAH BLAH BLAH INTRO WEEEE
 \section{Background}
     An out of order execution system has two additional stages 
 to the lifetime of the instruction on top of the traditional pipeline 
-stages.  Each of which a small memory array to keep track of instuction flow.
-The first addtion, the instruction queue(IQ) which holds instructions that are 
+stages.  Each of which a small memory array to keep track of instruction flow.
+The first addition, the instruction queue(IQ) which holds instructions that are 
 waiting to be executed.  Each entry will hold the instruction -- including 
 type, operand registers, and destination registers.  The second structure 
-holds the instructions that are in flight but not yet commited to the register
+holds the instructions that are in flight but not yet committed to the register
 file. Each entry will hold both PC of the instruction, as well as the destination
-register and the result of the excution unit.  There is also a flag that will
+register and the result of the execution unit.  There is also a flag that will
 mark the result of the entry as valid.  
 
-Replacing the traditional instruction dispatch stage, An placeholder will be made for the 
+Replacing the traditional instruction dispatch stage, An placeholder will be made for the
 instruction in ReOrder Buffer (ROB), and the instructions will be placed
 in the instruction queue(IQ). In this stage instructions will first wait for their operands if not already
-available.  When all operands are available, the instruction is ready to 
-be executed so wait until its appropriate execution unit is free.  At this 
-point the instruction exits the IQ and begins execution.  
+available.  When all operands are available, the instruction is ready to
+be executed so wait until its appropriate execution unit is free.  At this
+point the instruction exits the IQ and begins execution.
 
 Upon execution completion, the output value is stored in the ROB with its 
 corresponding entry and that entry is marked as valid or completed with a 
-1 bit flag.  An entry is commited from the ROB to the architectrual register
+1 bit flag.  An entry is committed from the ROB to the architectural register
 file (ARF) when that entry is the oldest (lowest PC) and its result has been 
 marked as valid. 
 \subsection{Circular ROB}
-The circular ROB is 
+The circular ROB is one of the most basic implementations of the ROB.  Simply using
+a circular buffer as the structure to hold each entry.  Since the ROB is basically
+just memory, there are two special slots for to keep track of the head and tail
+pointer to create the circular buffer.  As entries are written into the ROB, the
+entry is written at the tail pointer and then the tail pointer is incremented.
+Likewise when an entries is written to the ARF, the head pointer is incremented.
+The circular buffer method is widely used since it inherently keeps track of the 
+oldest instruction (which is at the head pointer), as well as which entry slots
+are used or empty.   However it may not be very power efficient if there is a large
+number of empty slots at any given point of the execution.    
+\subsection{Dynamic ROB}
+The dynamic ROB aims to reduce power by turning off portions of the buffer when they
+are not needed, and turning them back on when they become necessary. By partitioning
+the buffer into what is essentially smaller buffers, the complexity of each partition
+is reduced. Further, the ROB will then be custom sized to need, thus reducing energy
+wasted powering large stretches of empty entries. Due to the large percentage of energy
+consumption stemming from leakage power, turning off partitions contribute significant
+power savings over the base circular ROB.
+
 \subsection{Distributed ROB}
 An accepted optimization for improving the power consumption of an ROB unit 
 is to break up the ROB buffer into clusters REF[XXX].  In this organization, the in-flight 
@@ -177,8 +195,27 @@ performance degradation REF[XXX].
 \subsection{Dynamic ROB}
 \subsection{Latch ROB}
 
+\subsection{Latch ROB}
+In addition to large power requirement to maintain the entries of the ROB, another 
+large power consumer is the read ports of the ROB.  The read port of the ROB is used
+to forward the results of an entry to the dispatch unit (DU) to use as an operand.
+All though forwarding from the ROB occurs about 6\%\cite{kucuk} of all instructions 
+in an N way super scalar processor there are 2N ports (to accommodate FP
+ instructions) which add unnecessary complexity and power consumption for a small 
+percentage of instructions.  It has been proposed by eliminating the read ports 
+in the ROB all together, we can reduce energy consumption\cite{kucuk}.  However
+without read ports, a small window appears where the data cannot be accessed,
+starting from when the result is placed in to the ROB until the ROB commits that 
+entry to the ARF.  To help mitigate stalls that might happen due to this hole, 
+we introduce retention latches.   Retention latches are small memory elements and 
+we use them to cache the most recent results that have been written into the ROB.
+This way instructions are still able to access the most recently produced results
+and not stall.  However if the operand needed is not in the ROB, the stream will 
+stall until a commit is made to the ARF, and that result value is forwarded to 
+the dispatch unit immediately.
+
 \section{Project Implementation}
-Our simulator provides a cycle accurate behavioral model of a standard circular re-order buffer.  At the outset of the project, the standard re-order buffer we intended to implement was a non-circular RAM-based re-order buffer.  However, after feedback from the course instructor and students it was decided that a circular buffer is more widely held as being the 'standard' buffer type and would serve as an ideal underlying model for power optimizations.  Thus, we implement and compare the standard circular re-order buffer to circular re-order buffers with the following optimizations: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch). The following sections outline each of the above model implementations as well as input instruction generation and power results tabulation.  
+Our simulator provides a cycle accurate behavioral model of a standard circular re-order buffer.  At the outset of the project, the standard re-order buffer we intended to implement was a non-circular RAM-based re-order buffer.  However, after feedback from the course instructor and students it was decided that a circular buffer is more widely held as being the 'standard' buffer type and would serve as an ideal underlying model for power optimizations.  Thus, we implement and compare the standard circular re-order buffer to circular re-order buffers with the following optimizations: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch). The following sections outline each of the above model implementations as well as input instruction generation and power results tabulation.
 \subsection{Instruction Generation}
 
 \begin{table*}
@@ -196,13 +233,13 @@ Instruction Type&Cycle Count&Instruction Type&Cycle Count\\ \hline
 
 We model the input to our simulator as a stream of integer and floatpoint instructions.  The instructions are represented at the bit-level and model MIPS instructions as closely as possible.  Each instruction consists of 1) Instruction type, 2) Source and destination registers 3) a PC.  Table ~\ref{tab:instypetable} indicates the types of instructions modeled.  Each instruction type also has a predetermined cycle execution time designating the number of cycles that must elapse between instruction issue and the completion of the instruction.  As modeling functional units goes beyond the scope of this simulator, instructions are flagged as complete after the listed number of cycles has elapsed.  The actual cycle counts are the same as those modeled in MIT's Graphite many-core processor simulator\cite{graphite}, with the exception of LOAD and STORE.  The cycle counts corresponding to LOAD and STORE instructions are estimated as a predetermined 20 cycles each.  This is simply an estimation as the actual cycle count is heavily dependent on cache architecture and benchmark specific cache behavior.  Since both of these topics are beyond the scope of the simulator, we estimate the completion time of LOAD and STORE instructions as a set value substantially longer than the other more accurate instruction types.
 
-Registers are generated in bit representation as 4 bits each totalling 12 bits for the s1, s2 and d registers in each instruction. Currently, our representation of instructions make no distinction between zero, 1, and 2 operand instructions.  All instructions regardless of type feature two operands.  This feature is supported by the fact that a memory hierarchy and functional units are not simulated by our system and as such immediate values have no direct use.  Further, every instruction features a d register regardless of type.  Because our simulator features operand forwarding from the ROB, it is necessary for the generation of registers to keep track of past destination registers to use as dependent operands in future instructions.  This history buffer is implemented as a rotating bit register from which prior destination registers can be indexed.
+Registers are generated in bit representation as 4 bits each totaling 12 bits for the s1, s2 and d registers in each instruction. Currently, our representation of instructions make no distinction between zero, 1, and 2 operand instructions.  All instructions regardless of type feature two operands.  This feature is supported by the fact that a memory hierarchy and functional units are not simulated by our system and as such immediate values have no direct use.  Further, every instruction features a d register regardless of type.  Because our simulator features operand forwarding from the ROB, it is necessary for the generation of registers to keep track of past destination registers to use as dependent operands in future instructions.  This history buffer is implemented as a rotating bit register from which prior destination registers can be indexed.
 
 Each instruction also features a program counter associated with the instruction.  While this is clearly a simplification of a real system, it serves the purposes of our simulation as a uniquely identifiable tag by which to differentiate instructions.  In both a real system and our simulator, a statically set 32 bit value is used to represent this PC/tag.  As such, the specific values contained in the PC/tag will yield accurate transition results (nonexistent) and is thus are irrelevant.  Simply starting the PC of the first instruction in the stream at 0 and incrementing by 4 each instruction guarantees uniqueness among PCs and serves the purposes of an instruction tag.
 
-The aforementioned instruction fields have multiple modes of generation.  Our simulator synthetically generates an instruction input trace based on a prescribed instruction profile.  The instruction profile features: 1) a percent rate of occurrence for each instruction type, 2) a rate corresponding to the interdependence of registers between instructions, and 3) an overall instruction count.  
+The aforementioned instruction fields have multiple modes of generation.  Our simulator synthetically generates an instruction input trace based on a prescribed instruction profile.  The instruction profile features: 1) a percent rate of occurrence for each instruction type, 2) a rate corresponding to the interdependence of registers between instructions, and 3) an overall instruction count.
 
-The instruction generator is currently capable of generating four distinct instruction streams corresponding to different instruction workloads.  The first instruction stream is marked as the default instruction stream.  It features equal percentages of each type of instruction as well as a 10% register dependence rate.  This register dependence rate was selected arbitrarily to act as a starting point for modeling data dependencies between instructions.
+The instruction generator is currently capable of generating four distinct instruction streams corresponding to different instruction workloads.  The first instruction stream is marked as the default instruction stream.  It features equal percentages of each type of instruction as well as a 10\% register dependence rate.  This register dependence rate was selected arbitrarily to act as a starting point for modeling data dependencies between instructions.
 
 The remaining three instruction streams are modeled after SPEC-FP benchmarks \cite{rupnow}.  The benchmarks were chosen to represent three major modes of operation:  floating point heavy execution, integer heavy execution, and mixed type execution.  For a floating point heavy execution, 173.applu was selected and modeled.  173.applu models parabolic/elliptical partial differential equations and features almost exclusively floating point operations as well as a large number of memory operations making it useful as both a floating point benchmark as well as a long running memory intensive benchmark.  191.fma3d is used to model integer heavy execution.  It models finite-element crash simulation and features very few floating point operations and substantially fewer memory operations than 173.applu making it an ideal light-weight integer workload.  Finally, 183.equake is used to represent the average workload.  It models seismic wave propagation and features both integer and floating point operations as well as moderate memory usage.  As such it acts as a more representative general workload than the original default workload.  Each of the SPEC-FP benchmarks feature a 6{\char'045} register forwarding frequency as is reported by \cite{kucuk}.
 
@@ -221,7 +258,7 @@ fsubProc&0.10&0.13&0.01&0.06\\ \hline
 fmultProc&0.10&0.13&0.01&0.06\\ \hline
 fdivProc&0.10&0.13&0.01&0.06\\ \hline
 forwardingRate&0.10&0.06&0.06&0.06\\ \hline
-instCount&10000&10000&10000&10000\\ \hline\end{tabular}
+instCount&100000&100000&100000&100000\\ \hline\end{tabular}
 \caption{Benchmark Instruction Profiles showing percent rate of occurrence of each instruction type.}
 \label{tab:insprofile}
 \end{table*}
@@ -231,7 +268,12 @@ For the purposes of our power comparisons, each of the above instruction workloa
 The following section details the model implementatations in our simulator.  The basic re-order buffer model we use as a base-line for comparison is a standard circular ROB model.  Section ~\ref{sec:circ} discusses its implementation.  We further model three optimizations for re-order buffers in an attempt to improve overall power usage: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch).  Each of these optimized models are built on top of the underlying circular ROB model to provide as close a behavioral and power comparison as possible.  Each of the optimizations, as well as the standard circular reorder buffer, are described in detail below.
 \subsubsection{Circular ROB}
 \label{sec:circ}
+The circular ROB is the basic current implementation of the reorder buffer. It is implemented as a circular FIFO buffer, and the beginning and end of the used region are tracked by the head and tail pointers, respectively. When an instruction is issued, space is reserved for the instruction's result at the tail pointer, and the tail pointer is incremented. When the instruction completes, the result is inserted into the reorder buffer at the reserved space. The result is finally committed to the architecture register file when the head pointer passes through it; each cycle, results are committed from the head pointer and the head pointer is incremented repeatedly, until either an unfinished instruction result slot is reached or all write ports are used up.
+
+The circular ROB is considered full when the tail pointer reaches the head pointer, as the head pointer denotes the start of the in-use region and no more space can be reserved from the tail pointer. Conversely, then buffer is empty when the head pointer catches up to the tail pointer, as every instruction in the buffer has now been committed to the ARF.
+
 \subsubsection{Distributed (Cluster based) ROB}
+<<<<<<< HEAD
 Our distributed (cluster based) ROB is modeled similarly to the circular ROB.  Instead of having a single ROB buffer, 
 numerous ROB buffers are instantiated.  In a real system, there would be one ROB buffer for each functional 
 unit cluster.  However, since we do not model functional units in our simulator, we simply divide the ROB 
@@ -266,7 +308,37 @@ major behavioral difference between the circular ROB and the distributed ROB, as
 the central FIFO queue instead of the ROB cluster itself. 
 
 \subsubsection{Dynamically Sized ROB}
+The dynamically sized ROB is an optimization on the circular ROB where the buffer is divided into partitions, and those partitions deemed unnecessary are powered off to conserve energy. Our implementation of the basic dynamic ROB is behaviorally the same as that detailed in \cite{kucuk2}.
+
+Downsizing the ROB is based on a periodic sampling of the buffer state. A number of cycles, {\it update\_period}, is defined, and every {\it update\_period} cycles the size of the ROB is updated. Every {\it sample\_period} cycles, the number of active entries is recorded, and the quantity {\it active\_size} is recorded as the average of these samples between each {\it update\_period}. The current maximum capacity of the reorder buffer is defined as the {\it current\_size}, and the size of a single ROB partition is defined as {\it partition\_size}. After each {\it update\_period} cycles, the ROB checks how full the buffer is, and if {\it current\_size} - {\it active\_size} > {\it partition\_size}, then a single partition is turned off.
+
+Increasing the size of the ROB is dependent on how often the buffer fills up. A value, defined as the {\it overflow\_count} is incremented each cycle that instruction issue is stalled because the ROB is full. An {\it overflow\_threshold} is defined, and if during an {\it update\_period}, {\it overflow\_count} > {\it overflow\_threshold}, then a partition is turned on.
+
+A conservative approach of deallocating strictly from one end of the buffer, and allocating strictly towards that end is followed. For example, if the ROB consisted of four partitions, downsizing the buffer would turn off the fourth, and then the third. At this point, if we were to increase the size of the buffer, the third partition would be turned on first, and the fourth partition next.
+
+When the ROB's size is updated, partitions are not immediately turned off, since the partition could coincide with the active region of the buffer. If deallocating, this would disable a part of the active region, making instructions in the region impossible to complete. If allocating, this would insert an empty segment right into the middle of the FIFO queue, logically breaking the buffer. It is only safe to turn a partition off/on when the active region is not wrapped around (that is, the head pointer is less than the tail pointer), and the tail pointer comes before the first index into the partition to turn on/off. \cite{kucuk3} details a worst case scenario of deallocating, where the active region is wrapped (head is greater than tail), and both pointers lie in the region to be turned off. In this case, the head pointer must first clear the entries already in the buffer. Since the tail pointer is already in the partition, it will continue to write into the partition, and the head pointer must come around a second time to clear out these new entries. Only then can the partition be safely deallocated, after the head pointer has wrapped around to zero twice.
+
+\subsubsection{Optimized Dynamic ROB}
+We implement an optimized version of the dynamic ROB detailed in \cite{kucuk2} and \cite{kucuk3}, opting to be more aggressive with turning off partitions in order to save power, and to improve the partition allocation/deallocation scheme.
+
+When downsizing the regular dynamic ROB, a single partition is turned off if {\it current\_size} - {\it active\_size} > {\it partition\_size}. In an effort to minimize the buffer size and thus the power consumed, we choose to downsize by
+
+\begin{center}
+$\lfloor \frac{current\_size - active\_size}{partition\_size} \rfloor$
+\end{center}
+
+Thus if much less than the capacity of the buffer is active, several partitions may be turned off at once.
+
+To more efficiently resize the buffer, we found that choosing the first valid partition immediately after the one housing the tail pointer is optimal. For example, if we are allocating a partition in a four partition buffer, and the tail pointer resides in partition 3, we first check if partition 4 can be turned on, then partition 1, then partition 2.
+
+In allocating the buffer, the reasoning is as follows. We aim to enable a disabled partition. It is impossible for the head pointer to lie in the disabled partition, thus there is no need to consider the head pointer. To maintain the logical consistency of the buffer, we cannot enable a partition that would divide the active region of the buffer. Thus, we must allocate a partition that comes after the tail pointer, and if we wish the buffer size to grow as soon as possible, the partition to be allocated must be the first disabled partition after the tail pointer.
+
+In deallocating the buffer, turning off the first partition after the tail pointer is also optimal. Being after the tail pointer, once we mark the partition for disabling we can prevent the tail pointer from writing into it. This prevents the worst case scenario where the head pointer must wrap around 0 twice to disable a partition. The next enabled partition immediately after the tail pointer is also the one the active region will leave first (if the region is in the partition; if not the partition is already empty and ready to deactivate), thus it will empty out first. If we are to maximize the power savings, we must disable the first partition that is available to be disabled, thus the first active partition after the tail is the optimal choice.
+
+One last optmization we implemented was just-in-time allocation of partitions. Normally, when the tail pointer increments, if a partition is not active the tail pointer simply skips it. In our optimization, before skipping the tail pointer will check if the disabled partition is marked to be enabled. If so, instead of skipping over it, the partition will be turned on and the tail pointer will write into it. This ensures that each partition to be turned on is enabled at the last possible moment, saving the energy that would otherwise be consumed by an empty partition waiting to be written into.
+
 \subsubsection{Reduced Output Port ROB (Retention Latch)}
+
 \subsection{Power Tabulation Implementation}
 \section{Results}
 hi
@@ -292,16 +364,22 @@ ending stuff
 \section{Acknowledgments}
 if we really need this....
 
-%TODO add in bib 
+%TODO add in bib
 \begin{thebibliography}{------}
 \bibitem{graphite}
-	MIT Graphite Simulator
-	https://github.com/mit-carbon/Graphite/wiki
+MIT Graphite Simulator
+https://github.com/mit-carbon/Graphite/wiki
 \bibitem{kucuk}
 Gurhan Kucuk, Dmitry Ponomarev, and Kanad Ghose. 2002. Low-complexity reorder buffer architecture. In Proceedings
 of the 16th international conference on Supercomputing (ICS '02). ACM, New York, NY, USA, 57-66. DOI=10.
 1145/514191.514202 http://doi.acm.org/10.1145/514191.514202
+\bibitem{kucuk2}
+Gurhan Kucuk, Dmitry Ponomarev, and Kanad Ghose. 2002. Energy-Efficient Design of the Reorder Buffer. In Proceedings of the International Workshop on Power and Timing Modeling, Optimization, and Simulation, September 2002.
+\bibitem{kucuk3}
+Gorhan Kucuk, Dmitry Ponomarev, and Kanad Ghose. 2001. Reducing Power Requirements of Instruction Scheduling Through Dynamic Allocation of Multiple Datapath Resources. In Proceedings of the International Symposium on Microarchitecture, December 2001.
 \bibitem{rupnow}
 Kyle Rupnow, Arun Rodrigues, Keith Underwood, and Katherine Compton. 2006. Scientific applications vs. SPEC-FP: a comparison of program behavior. In Proceedings of the 20th annual international conference on Supercomputing (ICS '06). ACM, New York, NY, USA, 66-74. DOI=10.1145/1183401.1183413 http://doi.acm.org/10.1145/1183401.1183413 
+
+
 \end{thebibliography}
 \end{document}

@@ -376,6 +376,7 @@ uint32_t ROB_Dyn::tail_incr_update (uint32_t tail_ptr)
               // If the encountered partition is marked to be enabled,
               // enable it.
               m_parts[part_num].state = ENABLED;
+              m_current_size += m_part_size;
               //cerr << "Enable" << endl;
               break;
             }
@@ -502,8 +503,8 @@ void ROB_Dyn:: print_power_stats (int cycles)
 {
   cout << endl;
   cout << "Power statistics from the run: (" << cycles << " cycles)" << endl;
-  cout << "Total # bits = num_cycles * # enabled partitions * bits per partition = " <<
-    m_partition_cycles * m_part_size * 70 << endl;
+  cout << "Total # bits = num_cycles * ( # enabled partitions * bits per partition + bypass array) = " <<
+    m_partition_cycles * m_part_size * 70 + m_partition_cycles * m_nparts / m_part_size << endl;
   cout << "Total # bit transitions to high: " << p_totalBitTransitionsHigh << endl;
   cout << "Total # bit transitions to low: " << p_totalBitTransitionsLow << endl;
   cout << "Total # bits remained low: " << p_totalBitsRemainedLow << endl;
