@@ -141,7 +141,14 @@ developed to decease circuit level power usages, our simulation will become less
 power cost, such as bit flips from 0 to 1, register comparator usage, and bit lines driven.  To help measure leakage power and overall states of the ROB, we also keep track of the 
 time (in cycles) each bit stays in the high state, or the low state. 
 
-At the start of each cycle 
+At the start of each cycle the simulator take a snapshot of the entire ROB, this includes each ROB entry, head/tail pointers (circular ROB), forward flags (OOP ROB), and etc as the type 
+of ROB changes.  Then at the end of each cycle completion, we are able to compare which bits have changed, from low to high or high to low.   This results of the comparisons are tabulated
+and printed out at the of the simulation runs.  The checkpoint comparison allows the simulator to easily modularize power data collection for any type of ROB.
+
+The events that cannot be captured by the checkpoint comparison, is captured during the behavioral simulation.  These items are stateless such as comparators used, bit lines driven, and etc.
+As part of the behavioral simulation, the respective counters would simply be incremented as part of simulating the usage of the item.
+
+These final tabulations allow the user to fairly comparing the type and algorithm of the reorder buffer with our worrying about the circuit level technology underneath. 
 
 
 
