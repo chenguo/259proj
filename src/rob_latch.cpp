@@ -306,3 +306,16 @@ void ROB_Latch::print_power_stats (int cycles)
 	
 }
 
+
+
+uint32_t ROB_Latch::getCyclesToCompletion(uint32_t reg) {
+	uint32_t i = m_head;
+	if (!m_empty)
+		do {
+			entry_t *entry = get_entry(i);
+			if(entry->reg_id == reg)
+				return entry->cycles;
+			i = ((i+1)%m_size);
+		} while(i != m_tail);	
+	return 0;
+}

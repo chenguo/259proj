@@ -118,9 +118,63 @@ In allocating the buffer, the reasoning is as follows. We aim to enable a disabl
 
 In deallocating the buffer, turning off the first partition after the tail pointer is also optimal. Being after the tail pointer, once we mark the partition for disabling we can prevent the tail pointer from writing into it. This prevents the worst case scenario where the head pointer must wrap around 0 twice to disable a partition. The next enabled partition immediately after the tail pointer is also the one the active region will leave first (if the region is in the partition; if not the partition is already empty and ready to deactivate), thus it will empty out first. If we are to maximize the power savings, we must disable the first partition that is available to be disabled, thus the first active partition after the tail is the optimal choice.
 
-One last optmization we implemented was just-in-time allocation of partitions. Normally, when the tail pointer increments, if a partition is not active the tail pointer simply skips it. In our optimization, before skipping the tail pointer will check if the disabled partition is marked to be enabled. If so, instead of skipping over it, the partition will be turned on and the tail pointer will write into it. This ensures that each partition to be turned on is enabled at the last possible moment, saving the energy that would otherwise be consumed by an empty partition waiting to be written into.
+One last optimization we implemented was just-in-time allocation of partitions. Normally, when the tail pointer increments, if a partition is not active the tail pointer simply skips it. In our optimization, before skipping the tail pointer will check if the disabled partition is marked to be enabled. If so, instead of skipping over it, the partition will be turned on and the tail pointer will write into it. This ensures that each partition to be turned on is enabled at the last possible moment, saving the energy that would otherwise be consumed by an empty partition waiting to be written into.
 
-\subsubsection{Reduced Output Port ROB (Retention Latch)}
+\subsubsection{Omitted Output Port ROB (Retention Latch)}
+The main difference between the Circular ROB and the Omitted Output Port (OOP) ROB is that the OOP adds in a retention latches and is not allowed to forward any results directly to DU.  
+This our implementation of the OOP ROB simply extends the circular ROB, adding in a structure for the retention latches.  The latches is modeled very similar to the ROB entries, an array
+of a latch entry structure.  Each latch entry contains a 32 bit value for the results to be stored as well small tag to the corresponding destination register of the result.  As an artifact of our 
+simulation a flag to denote that the entry is part of a floating point operation is required as well.  Also an additional counter was added to count the additional re-forwarding when a value
+is committed to the ARF but also needs to be forwarded to the DU unit as well.  Though this is not an increasing number of ports driven, it may affect future power calculations relating to 
+capacitance.  Lastly as changing the semantic of the number of forwards to the DU, the count refers to the number time the entry is read from a retention latch.
 
-
+As a few minor changes to the behavioral function of the OOP ROB, the first of which is the lack of the ability to forward operands.  Thus in the simulated stage of reading from the instruction
+stream, when we would normally check if the operand is in the ROB and forward.  We instead do the following, we still check to see if the operand is in the ROB, and the retention latches. 
+If the entry is not in the ROB, or the latches, the operand would be available in the ARF or memory, in the converse case,  the entry in both, the ROB, and the latches, the operand is forwarded
+from the latches and the counter is incremented .  In the case that the entry exists in the ROB, but not in the latches, a flag would be set in the ROB to forward the result when committing to the ARF. 
+The last case, that is the entry exists in the latches and not in the ROB, means that the result has already been committed and the result could be forwarded from the ARF.  Next in our update entries 
+(when the cycle counter expires -- execution has completed) we would add in the new entry to the retention latch.  Lastly when the ROB entires are valid, and ready to be committed to the ARF,
+if the forwarding flag is set, the forwarding counter is incremented.
 \subsection{Power Tabulation Implementation}
+In order for our simulation to determine the power utilization, we do not try and equate each event with an associated cost in joules.  As technology changes, and new techniques are 
+developed to decease circuit level power usages, our simulation will become less and less accurate.  Instead we chose to simply tabulate each event that is associated with 
+power cost, such as bit flips from 0 to 1, register comparator usage, and bit lines driven.  To help measure leakage power and overall states of the ROB, we also keep track of the 
+time (in cycles) each bit stays in the high state, or the low state. 
+
+At the start of each cycle the simulator take a snapshot of the entire ROB, this includes each ROB entry, head/tail pointers (circular ROB), forward flags (OOP ROB), and etc as the type 
+of ROB changes.  Then at the end of each cycle completion, we are able to compare which bits have changed, from low to high or high to low.   This results of the comparisons are tabulated
+and printed out at the of the simulation runs.  The checkpoint comparison allows the simulator to easily modularize power data collection for any type of ROB.
+
+The events that cannot be captured by the checkpoint comparison, is captured during the behavioral simulation.  These items are stateless such as comparators used, bit lines driven, and etc.
+As part of the behavioral simulation, the respective counters would simply be incremented as part of simulating the usage of the item.
+
+These final tabulations allow the user to fairly comparing the type and algorithm of the reorder buffer with our worrying about the circuit level technology underneath. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
