@@ -273,7 +273,6 @@ The circular ROB is the basic current implementation of the reorder buffer. It i
 The circular ROB is considered full when the tail pointer reaches the head pointer, as the head pointer denotes the start of the in-use region and no more space can be reserved from the tail pointer. Conversely, then buffer is empty when the head pointer catches up to the tail pointer, as every instruction in the buffer has now been committed to the ARF.
 
 \subsubsection{Distributed (Cluster based) ROB}
-<<<<<<< HEAD
 Our distributed (cluster based) ROB is modeled similarly to the circular ROB.  Instead of having a single ROB buffer, 
 numerous ROB buffers are instantiated.  In a real system, there would be one ROB buffer for each functional 
 unit cluster.  However, since we do not model functional units in our simulator, we simply divide the ROB 
@@ -285,7 +284,7 @@ ROB clusters to operate entirely independently of one another.  Each ROB might a
 The largest modeling change required by the distributed ROB is the inclusion of the central FIFO queue.  This 
 FIFO queue is responsible for maintaining a global state of order between instructions in the different ROB buffers. 
 The FIFO queue is modeled as a modified circular buffer and each entry contains: 1) PC of instruction, 
-2) ROB_ID where the instruction placeholder resides, and 3) a valid bit corresponding to the completion state of 
+2) ROB{\char'137}ID where the instruction placeholder resides, and 3) a valid bit corresponding to the completion state of 
 the instruction.  The total number of entries in the FIFO queue is equal to the total entry size of the ROB.  
 Each active entry in the FIFO queue correlates with an active entry in one of the ROB clusters.  
 
@@ -298,7 +297,7 @@ This situation would occur very rarely in practice and would induce no form of d
 it would merely affect performance.  Possible avoidance techniques can be researched as future work.
 
 At the same time as inserting the instruction from the IQ into the ROB cluster, an entry must be recorded in the central FIFO 
-queue to maintain global program order.  At this point, both the instruction PC and the recently determined ROB_ID are 
+queue to maintain global program order.  At this point, both the instruction PC and the recently determined ROB{\char'137}ID are 
 noted in the central FIFO queue.  The tail pointer of the central FIFO queue is increased accordingly to match.
 
 Upon completion of an instruction, an instruction must be flagged as valid in both the ROB cluster in which it resides as well 
