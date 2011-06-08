@@ -16,7 +16,6 @@ ROB_Circ::ROB_Circ (int s, int in, int fn, int pflags)
   m_head_size = (uint32_t)(ceil(log(m_size) / log(2)));
   p_bit_count += (2*m_head_size);
 
-  cout << "New ROB_Circ:" << endl;
   cout << "# Entries: " << m_size << endl;
   cout << "Entry size: 70 bits" << endl;
   cout << "Head and tail pointer bits: " << m_head_size << endl;
@@ -208,7 +207,7 @@ uint32_t ROB_Circ::getCyclesToCompletion(uint32_t reg) {
         return entry->cycles;
       i = ((i+1)%m_size);
     } while(i != m_tail);
-  cout << "Couldnt find cycles to completion when expected!" << endl;
+  cerr << "Couldnt find cycles to completion when expected!" << endl;
   exit(1);
 }
 

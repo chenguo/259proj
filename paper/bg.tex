@@ -34,13 +34,12 @@ oldest instruction (which is at the head pointer), as well as which entry slots
 are used or empty.   However it may not be very power efficient if there is a large
 number of empty slots at any given point of the execution.    
 \subsection{Dynamic ROB}
-The dynamic ROB aims to reduce power by turning off portions of the buffer when they
-are not needed, and turning them back on when they become necessary. By partitioning
-the buffer into what is essentially smaller buffers, the complexity of each partition
-is reduced. Further, the ROB will then be custom sized to need, thus reducing energy
-wasted powering large stretches of empty entries. Due to the large percentage of energy
-consumption stemming from leakage power, turning off partitions contribute significant
-power savings over the base circular ROB.
+
+The dynamic ROB aims to reduce power usage by turning off portions of the buffer when they are not needed, and turning them back on when they become necessary. By partitioning the buffer into what is essentially smaller buffers, the complexity of each partition is reduced. Further, the ROB will then be custom sized to need, thus reducing energy wasted powering large stretches of empty entries. Due to the large percentage of energy consumption stemming from leakage power, turning off partitions contribute significant power savings over the base circular ROB.
+
+Downsizing the ROB is based on a periodic sampling of the buffer state. A number of cycles, {\it update\_period}, is defined, and every {\it update\_period} cycles the size of the ROB is updated. Every {\it sample\_period} cycles, the number of active entries is recorded, and the quantity {\it active\_size} is recorded as the average of these samples between each {\it update\_period}. The current maximum capacity of the reorder buffer is defined as the {\it current\_size}, and the size of a single ROB partition is defined as {\it partition\_size}. After each {\it update\_period} cycles, the ROB checks how full the buffer is, and if {\it current\_size} - {\it active\_size} > {\it partition\_size}, then a single partition is turned off.
+
+Increasing the size of the ROB is dependent on how often the buffer fills up. A value, defined as the {\it overflow\_count} is incremented each cycle that instruction issue is stalled because the ROB is full. An {\it overflow\_threshold} is defined, and if during an {\it update\_period}, {\it overflow\_count} > {\it overflow\_threshold}, then a partition is turned on.
 
 \subsection{Distributed ROB}
 An accepted optimization for improving the power consumption of an ROB unit 

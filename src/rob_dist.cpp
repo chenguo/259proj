@@ -105,7 +105,8 @@ void ROB_Dist::run (ins_t ins[])
       update_power_totals();
 
       cycles++;
-      print_msgs (cycles);
+      if (m_print & DBG_FLAG)
+        print_msgs (cycles);
 
       // Break when we've written all the instructions.
       if (fifo_empty && ins[ins_num].type == -1)
@@ -129,7 +130,8 @@ void ROB_Dist::update_entries ()
     fifo_entry_t *fifo_entry = return_fifo_entry (i);
     entry_t *entry = get_entry(fifo_entry->rob_id, fifo_entry->rob_index);
     if (entry->cycles && --entry->cycles == 0) {
-      cout << "Got result for central_fifo[" << i << "] -> rob[" << fifo_entry->rob_id << "][" << fifo_entry->rob_index << "]" << endl;
+      if (m_print & DBG_FLAG)
+        cout << "Got result for central_fifo[" << i << "] -> rob[" << fifo_entry->rob_id << "][" << fifo_entry->rob_index << "]" << endl;
       entry->valid = true;
       fifo_entry->valid = true;
       m_nrex++;
@@ -165,7 +167,8 @@ void ROB_Dist::write_to_arf ()
         isFirstFp = true;
       }
     }
-    cout << "Writing central_fifo[" << fifo_head << "] -> rob[" << fifo_entry->rob_id << "][" << fifo_entry->rob_index << "] to ARF" << endl;
+    if (m_print & DBG_FLAG)
+      cout << "Writing central_fifo[" << fifo_head << "] -> rob[" << fifo_entry->rob_id << "][" << fifo_entry->rob_index << "] to ARF" << endl;
     m_head[fifo_entry->rob_id] = ptr_incr (m_head[fifo_entry->rob_id]);
     if(m_head[fifo_entry->rob_id] == m_tail[fifo_entry->rob_id])
       m_empty[fifo_entry->rob_id] = true;
@@ -195,18 +198,20 @@ int ROB_Dist::read_from_iq (int ins_num, ins_t ins[])
   int clusterId = ((ins[ins_num].regs)&mask)%m_cluster_count;
   while ((m_empty[clusterId] || (m_head[clusterId] != m_tail[clusterId]))
          && (ins[ins_num].type != -1) && (nentries < m_n)) {
-    cout << "Read ins[" << ins_num << "] into rob[" << clusterId << "][" << m_tail[clusterId] << "]" << endl;
+    if (m_print & DBG_FLAG)
+      cout << "Read ins[" << ins_num << "] into rob[" << clusterId << "][" << m_tail[clusterId] << "]" << endl;
 
     // Write entry.
     // FP instruction uses 2 slots.
     if (ins[ins_num].type >= FADD) {
       if (ptr_incr (m_tail[clusterId]) != m_head[clusterId]) {
-        cout << "FP ins processed" << endl;
+        if (m_print & DBG_FLAG)
+          cout << "FP ins processed" << endl;
         // First half of entry.
         write_entry (clusterId, ins[ins_num]);
         nentries++;
         f_issued++;
-      } else {
+      } else if (m_print & DBG_FLAG) {
         cout << "No space for a FP, stall." << endl;
         break;
       }
@@ -220,11 +225,11 @@ int ROB_Dist::read_from_iq (int ins_num, ins_t ins[])
     clusterId  = ((ins[ins_num].regs)&mask)%m_cluster_count;
   }
 
-  if(m_tail[clusterId] == m_head[clusterId]) 
+  if(m_tail[clusterId] == m_head[clusterId] && m_print & DBG_FLAG)
     cout << "Stopped reading due to full rob[" << clusterId << "]" << endl;
-  else if(nentries >= m_n)
+  else if(nentries >= m_n && m_print & DBG_FLAG)
     cout << "Stopped reading due to full width" << endl;
-  else if(ins[ins_num].type == -1)
+  else if(ins[ins_num].type == -1 && m_print & DBG_FLAG)
     cout << "Stopped reading due to end of ins stream" << endl;
 
   m_nriq += nread;
@@ -271,7 +276,8 @@ uint32_t ROB_Dist::getCyclesToCompletion(uint32_t reg) {
         return entry->cycles;
       i = fifo_ptr_incr(i);
     } while(i != fifo_tail);
-  cout << "Couldnt find cycles to completion when expected!" << endl;
+  if (m_print & DBG_FLAG)
+    cout << "Couldnt find cycles to completion when expected!" << endl;
   exit(1);
 }
 
@@ -323,7 +329,7 @@ void ROB_Dist::write_entry(uint32_t clusterId, ins_t ins)
 
 void ROB_Dist::dist_post_cycle_power_tabulation () {
 #ifdef P_DEBUG
-  if(fifo_prev_head != fifo_head)
+  if(fifo_prev_head != fifo_head && m_print & DBG_FLAG)
     cout << "*TRANSITION* fifo_head: " << fifo_prev_head << "->" << fifo_head << endl;
 #endif
   p_perCycleBitTransitions += num_trans(fifo_prev_head, fifo_head, fifo_head_size);
@@ -333,7 +339,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
   p_perCycleBitsRemainedLow += fifo_head_size - num_hi(fifo_head,fifo_head_size) - num_lo_trans(fifo_prev_head, fifo_head, fifo_head_size);
 
 #ifdef P_DEBUG
-  if(fifo_prev_tail != fifo_tail)
+  if(fifo_prev_tail != fifo_tail && m_print & DBG_FLAG)
     cout << "*TRANSITION* fifo_tail: " << fifo_prev_tail << "->" << fifo_tail << endl;
 #endif
   p_perCycleBitTransitions += num_trans(fifo_prev_tail, fifo_tail, fifo_head_size);
@@ -344,7 +350,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
 
   for(uint32_t i = 0; i < m_size; i++) {
 #ifdef P_DEBUG
-    if(prev_central_fifo[i].valid != central_fifo[i].valid)
+    if(prev_central_fifo[i].valid != central_fifo[i].valid && m_print & DBG_FLAG)
       cout << "*TRANSITION* central_fifo[" << i << "].valid: " << prev_central_fifo[i].valid << "->" << central_fifo[i].valid << endl;
 #endif
     p_perCycleBitTransitions += num_trans(prev_central_fifo[i].valid, central_fifo[i].valid, 1);
@@ -354,7 +360,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
     p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(central_fifo[i].valid,1) - num_lo_trans(prev_central_fifo[i].valid, central_fifo[i].valid, 1);
 
 #ifdef P_DEBUG
-    if(prev_central_fifo[i].pc != central_fifo[i].pc)
+    if(prev_central_fifo[i].pc != central_fifo[i].pc && m_print & DBG_FLAG)
       cout << "*TRANSITION* central_fifo[" << i << "].pc: " << prev_central_fifo[i].pc << "->" << central_fifo[i].pc << endl;
 #endif
     p_perCycleBitTransitions += num_trans(prev_central_fifo[i].pc, central_fifo[i].pc, 32);
@@ -364,7 +370,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
     p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(central_fifo[i].pc,32) - num_lo_trans(prev_central_fifo[i].pc, central_fifo[i].pc, 32);
 
 #ifdef P_DEBUG
-    if(prev_central_fifo[i].rob_id != central_fifo[i].rob_id)
+    if(prev_central_fifo[i].rob_id != central_fifo[i].rob_id && m_print & DBG_FLAG)
       cout << "*TRANSITION* central_fifo[" << i << "].rob_id: " << prev_central_fifo[i].rob_id << "->" << central_fifo[i].rob_id << endl;
 #endif
     p_perCycleBitTransitions += num_trans(prev_central_fifo[i].rob_id, central_fifo[i].rob_id, m_cc_bits);
@@ -374,7 +380,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
     p_perCycleBitsRemainedLow += m_cc_bits - num_hi(central_fifo[i].rob_id,m_cc_bits) - num_lo_trans(prev_central_fifo[i].rob_id, central_fifo[i].rob_id, m_cc_bits);
 
 #ifdef P_DEBUG
-    if(prev_central_fifo[i].reg_id != central_fifo[i].reg_id)
+    if(prev_central_fifo[i].reg_id != central_fifo[i].reg_id && m_print & DBG_FLAG)
       cout << "*TRANSITION* central_fifo[" << i << "].reg_id: " << prev_central_fifo[i].reg_id << "->" << central_fifo[i].reg_id << endl;
 #endif
     p_perCycleBitTransitions += num_trans(prev_central_fifo[i].reg_id, central_fifo[i].reg_id, 4);
@@ -386,7 +392,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
 
   for(uint32_t clusterId = 0; clusterId < m_cluster_count; clusterId++) {
 #ifdef P_DEBUG
-    if(m_prev_head[clusterId] != m_head[clusterId])
+    if(m_prev_head[clusterId] != m_head[clusterId] && m_print & DBG_FLAG)
       cout << "*TRANSITION* m_head[" << clusterId << "]: " << m_prev_head[clusterId] << "->" << m_head[clusterId] << endl;
 #endif
     p_perCycleBitTransitions += num_trans(m_prev_head[clusterId], m_head[clusterId], m_head_size);
@@ -396,7 +402,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
     p_perCycleBitsRemainedLow += m_head_size - num_hi(m_head[clusterId],m_head_size) - num_lo_trans(m_prev_head[clusterId], m_head[clusterId], m_head_size);
 
 #ifdef P_DEBUG
-    if(m_prev_tail[clusterId] != m_tail[clusterId])
+    if(m_prev_tail[clusterId] != m_tail[clusterId] && m_print & DBG_FLAG)
       cout << "*TRANSITION* m_tail[" << clusterId << "]: " << m_prev_tail[clusterId] << "->" << m_tail[clusterId] << endl;
 #endif
     p_perCycleBitTransitions += num_trans(m_prev_tail[clusterId], m_tail[clusterId], m_head_size);
@@ -407,7 +413,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
 
     for(uint32_t i = 0; i < m_cluster_size; i++) {
 #ifdef P_DEBUG
-      if(m_prev_buf_array[clusterId][i].valid != m_buf_array[clusterId][i].valid)
+      if(m_prev_buf_array[clusterId][i].valid != m_buf_array[clusterId][i].valid && m_print & DBG_FLAG)
         cout << "*TRANSITION* m_buf_array[" << clusterId << "][" << i << "].valid: " << m_prev_buf_array[clusterId][i].valid << "->" << m_buf_array[clusterId][i].valid << endl;
 #endif
       p_perCycleBitTransitions += num_trans(m_prev_buf_array[clusterId][i].valid, m_buf_array[clusterId][i].valid, 1);
@@ -417,7 +423,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
       p_perCycleBitsRemainedLow += (uint32_t)1 - num_hi(m_buf_array[clusterId][i].valid, 1) - num_lo_trans(m_prev_buf_array[clusterId][i].valid, m_buf_array[clusterId][i].valid, 1);
 
 #ifdef P_DEBUG
-      if(m_prev_buf_array[clusterId][i].pc != m_buf_array[clusterId][i].pc) // ******************************************
+      if(m_prev_buf_array[clusterId][i].pc != m_buf_array[clusterId][i].pc && m_print & DBG_FLAG)
         cout << "*TRANSITION* m_buf_array[" << clusterId << "][" << i << "].pc: " << m_prev_buf_array[clusterId][i].pc << "->" << m_buf_array[clusterId][i].pc << endl;
 #endif
       p_perCycleBitTransitions += num_trans(m_prev_buf_array[clusterId][i].pc, m_buf_array[clusterId][i].pc, 32);
@@ -427,7 +433,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
       p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf_array[clusterId][i].pc, 32) - num_lo_trans(m_prev_buf_array[clusterId][i].pc, m_buf_array[clusterId][i].pc, 32);
 
 #ifdef P_DEBUG
-      if(m_prev_buf_array[clusterId][i].reg_id != m_buf_array[clusterId][i].reg_id)
+      if(m_prev_buf_array[clusterId][i].reg_id != m_buf_array[clusterId][i].reg_id && m_print & DBG_FLAG)
         cout << "*TRANSITION* m_buf_array[" << clusterId << "][" << i << "].reg_id: " << m_prev_buf_array[clusterId][i].reg_id << "->" << m_buf_array[clusterId][i].reg_id << endl;
 #endif
       p_perCycleBitTransitions += num_trans(m_prev_buf_array[clusterId][i].reg_id, m_buf_array[clusterId][i].reg_id, 4);
@@ -437,7 +443,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
       p_perCycleBitsRemainedLow += (uint32_t)4 - num_hi(m_buf_array[clusterId][i].reg_id, 4) - num_lo_trans(m_prev_buf_array[clusterId][i].reg_id, m_buf_array[clusterId][i].reg_id, 4);
 
 #ifdef P_DEBUG
-      if(m_prev_buf_array[clusterId][i].result != m_buf_array[clusterId][i].result)
+      if(m_prev_buf_array[clusterId][i].result != m_buf_array[clusterId][i].result && m_print & DBG_FLAG)
         cout << "*TRANSITION* m_buf_array[" << clusterId << "][" << i << "].result: " << m_prev_buf_array[clusterId][i].result << "->" << m_buf_array[clusterId][i].result << endl;
 #endif
       p_perCycleBitTransitions += num_trans(m_prev_buf_array[clusterId][i].result, m_buf_array[clusterId][i].result, 32);
@@ -447,7 +453,7 @@ void ROB_Dist::dist_post_cycle_power_tabulation () {
       p_perCycleBitsRemainedLow += (uint32_t)32 - num_hi(m_buf_array[clusterId][i].result, 32) - num_lo_trans(m_prev_buf_array[clusterId][i].result, m_buf_array[clusterId][i].result, 32);
 
 #ifdef P_DEBUG
-      if(m_prev_buf_array[clusterId][i].isfp != m_buf_array[clusterId][i].isfp)
+      if(m_prev_buf_array[clusterId][i].isfp != m_buf_array[clusterId][i].isfp && m_print & DBG_FLAG)
         cout << "*TRANSITION* m_buf_array[" << clusterId << "][" << i << "].isfp: " << m_prev_buf_array[clusterId][i].isfp << "->" << m_buf_array[clusterId][i].isfp << endl;
 #endif
       p_perCycleBitTransitions += num_trans(m_prev_buf_array[clusterId][i].isfp, m_buf_array[clusterId][i].isfp, 1);
