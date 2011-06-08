@@ -46,7 +46,7 @@ void ROB_Circ::run (ins_t ins[])
 
       // TODO: Count the read ports being driven for operands.
       // Get percentage this happens from Henry.
-
+ 
       post_cycle_power_tabulation ();
       update_power_totals ();
 
@@ -202,9 +202,9 @@ uint32_t ROB_Circ::tail_incr (uint32_t tail_ptr)
 uint32_t ROB_Circ::getCyclesToCompletion(uint32_t reg) {
   uint32_t i = m_head;
   if (!m_empty)
-    do { 
+    do {
       entry_t *entry = get_entry(i);
-      if(entry->reg_id == reg) 
+      if(entry->reg_id == reg)
         return entry->cycles;
       i = ((i+1)%m_size);
     } while(i != m_tail);
