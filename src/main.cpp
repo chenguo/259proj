@@ -109,12 +109,12 @@ int main (int argc, char *argv[])
     case MODE_DYN:
       cout << "Dynamic" << endl;
       // Overflow = 256, partitions = 8
-      rob = new ROB_Dyn (rob_size, 3, 1, 256, 16, print_flags, false);
+      rob = new ROB_Dyn (rob_size, 3, 1, 512, 16, print_flags, false);
       break;
 
     case MODE_DYNOPT:
       cout << "Dynamic Optimized" << endl;
-      rob = new ROB_Dyn (rob_size, 3, 1, 256, 16, print_flags, true);
+      rob = new ROB_Dyn (rob_size, 3, 1, 512, 16, print_flags, true);
       break;
 
     case MODE_DIST:

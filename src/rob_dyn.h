@@ -36,6 +36,7 @@ class ROB_Dyn : public ROB_Circ {
   virtual entry_t *get_entry (uint32_t ptr);
   virtual entry_t *get_prev_buf_entry (uint32_t ptr);
   virtual void error_diag ();
+  void write_entry (entry_t *entry, ins_t ins);
 
   void pre_cycle_power_snapshot ();
   void post_cycle_power_tabulation ();
@@ -45,6 +46,7 @@ class ROB_Dyn : public ROB_Circ {
   void dyn_process (int cycles);
   void dyn_shrink (int parts);
   void dyn_grow (int parts);
+  uint32_t tail_incr_update (uint32_t ptr);
 
   uint32_t m_update_period;
   uint32_t m_sample_period;
