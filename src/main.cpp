@@ -148,6 +148,7 @@ void help ()
   cout << "Modes:" << endl;
   cout << "  circular   Circular ROB." << endl;
   cout << "  dynamic    Dynamically resized ROB." << endl;
+  cout << "  dyn-opt  Optimized dynamic ROB." << endl;
   cout << "  dist       Distributed ROB." << endl;
   cout << "  latch      ROB with retention latches." << endl;
   cout << "Benchmarks:" << endl;
