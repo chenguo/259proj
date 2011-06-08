@@ -145,9 +145,37 @@ file (ARF) when that entry is the oldest (lowest PC) and its result has been
 marked as valid. 
 \subsection{Circular ROB}
 The circular ROB is 
-\subsection{Latch ROB}
-\subsection{Dynamic ROB}
 \subsection{Distributed ROB}
+An accepted optimization for improving the power consumption of an ROB unit 
+is to break up the ROB buffer into clusters REF[XXX].  In this organization, the in-flight 
+instruction information is distributed across all of the units and then re-assembled 
+back into program order after the fact.  The primary advantage of this approach 
+is that it dramatically lessens the size of the individual ROB units.  This reduces overall
+power by reducing the bit line width as well as unit capacitance.
+
+...IMAGE FROM OUR SLIDES...
+
+The overhead associated with this scheme is that the addition of a separate FIFO unit
+is required to maintain a global state of instruction order between the separate ROB units.
+This central FIFO unit is then referenced upon instruction re-order to commit the instructions
+in program order.  The contents of the FIFO unit are fairly simple and incur reasonable hardware
+overhead.  Each entry needs only contain the PC of the instruction (or some other unique identifier)
+and the corresponding ROB unit that houses the placeholder of the instruction as it is in-flight. 
+The total ROB bit storage count remains the same from the non-distributed model to the distributed model
+as the overall size of the ROB remains the same.  However, the inclusion of the central FIFO queue 
+induces some overhead bits that must be considered when analyzing the overall effectiveness of the 
+model.  
+
+The distribution or clustering of the ROB unit also inherently induces a minimal performance overhead 
+in particular cases.  By breaking the ROB into smaller pieces and distributing the instruction 
+data across the unit, the placement of instructions becomes a performance factor.  Typically, a 
+distributed ROB model features only a single write port per ROB cluster.  As a result only one operand 
+can be forwarded at a time from the ROB.  In the rare case that an instruction requires two operands be 
+forwarded from the same ROB cluster a delay of one cycle is imposed while the operands are forwarded 
+sequentially.  It is reported, however, that this happens very rarely in practice and induces less than 1\% 
+performance degradation REF[XXX].
+\subsection{Dynamic ROB}
+\subsection{Latch ROB}
 
 \section{Project Implementation}
 Our simulator provides a cycle accurate behavioral model of a standard circular re-order buffer.  At the outset of the project, the standard re-order buffer we intended to implement was a non-circular RAM-based re-order buffer.  However, after feedback from the course instructor and students it was decided that a circular buffer is more widely held as being the 'standard' buffer type and would serve as an ideal underlying model for power optimizations.  Thus, we implement and compare the standard circular re-order buffer to circular re-order buffers with the following optimizations: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch). The following sections outline each of the above model implementations as well as input instruction generation and power results tabulation.  
@@ -204,6 +232,39 @@ The following section details the model implementatations in our simulator.  The
 \subsubsection{Circular ROB}
 \label{sec:circ}
 \subsubsection{Distributed (Cluster based) ROB}
+Our distributed (cluster based) ROB is modeled similarly to the circular ROB.  Instead of having a single ROB buffer, 
+numerous ROB buffers are instantiated.  In a real system, there would be one ROB buffer for each functional 
+unit cluster.  However, since we do not model functional units in our simulator, we simply divide the ROB 
+into multiple smaller ROBs.  Each of these ROBs implement the default circular ROB model.  Each ROB segment 
+features a head pointer and a tail pointer and contains an equal portion of the total ROB space.  No further 
+enhancements need to be made to the default circular ROB model as the inclusion of the central FIFO allows the 
+ROB clusters to operate entirely independently of one another.  Each ROB might as well be the only ROB in the system. 
+
+The largest modeling change required by the distributed ROB is the inclusion of the central FIFO queue.  This 
+FIFO queue is responsible for maintaining a global state of order between instructions in the different ROB buffers. 
+The FIFO queue is modeled as a modified circular buffer and each entry contains: 1) PC of instruction, 
+2) ROB_ID where the instruction placeholder resides, and 3) a valid bit corresponding to the completion state of 
+the instruction.  The total number of entries in the FIFO queue is equal to the total entry size of the ROB.  
+Each active entry in the FIFO queue correlates with an active entry in one of the ROB clusters.  
+
+The distributed ROB requires only minor changes to the basic circular buffer to realize its effectiveness.  Instructions are 
+read from the Instruction Queue as usual and inserted into their corresponding ROB entry while updating the corresponding tail 
+pointer.  Since there are now multiple ROBs into which instructions can be inserted, a quick modulus is performed on the 
+destination register of the instruction to divide the instructions equally between each ROB.  This presents the possibility 
+for a worst-case situation where the entire instruction stream is blocked due to improper balancing between ROB clusters.  
+This situation would occur very rarely in practice and would induce no form of deadlock or livelock in the system -- 
+it would merely affect performance.  Possible avoidance techniques can be researched as future work.
+
+At the same time as inserting the instruction from the IQ into the ROB cluster, an entry must be recorded in the central FIFO 
+queue to maintain global program order.  At this point, both the instruction PC and the recently determined ROB_ID are 
+noted in the central FIFO queue.  The tail pointer of the central FIFO queue is increased accordingly to match.
+
+Upon completion of an instruction, an instruction must be flagged as valid in both the ROB cluster in which it resides as well 
+as its corresponding central FIFO queue entry.  The central FIFO queue then directs the appropriate ROB to write the instruction 
+output to its write port when all prior instructions have been written so that program order is maintained.  This is the second 
+major behavioral difference between the circular ROB and the distributed ROB, as writes and write-order is driven and determined by 
+the central FIFO queue instead of the ROB cluster itself. 
+
 \subsubsection{Dynamically Sized ROB}
 \subsubsection{Reduced Output Port ROB (Retention Latch)}
 \subsection{Power Tabulation Implementation}
