@@ -52,9 +52,25 @@ For the purposes of our power comparisons, each of the above instruction workloa
 The following section details the model implementations in our simulator.  The basic re-order buffer model we use as a base-line for comparison is a standard circular ROB model.  Section ~\ref{sec:circ} discusses its implementation.  We further model three optimizations for re-order buffers in an attempt to improve overall power usage: 1) Distributed (Cluster based) ROB, 2) Dynamically Sized ROB, 3) Reduced Output Port ROB (Retention Latch).  Each of these optimized models are built on top of the underlying circular ROB model to provide as close a behavioral and power comparison as possible.  Each of the optimizations, as well as the standard circular reorder buffer, are described in detail below.
 \subsubsection{Circular ROB}
 \label{sec:circ}
-The circular ROB is the basic current implementation of the reorder buffer. It is implemented as a circular FIFO buffer, and the beginning and end of the used region are tracked by the head and tail pointers, respectively. When an instruction is issued, space is reserved for the instruction's result at the tail pointer, and the tail pointer is incremented. When the instruction completes, the result is inserted into the reorder buffer at the reserved space. The result is finally committed to the architecture register file when the head pointer passes through it; each cycle, results are committed from the head pointer and the head pointer is incremented repeatedly, until either an unfinished instruction result slot is reached or all write ports are used up.
+The circular ROB is the basic current implementation of the reorder buffer, so far each of the other ROB designs will use the 
+circular array for each instruction entry.  Each instruction entry will have a flag to determine if its result is valid, a 
+result field (currently 32 bits), the corresponding register id tag and the PC of the instructions.  There are two additional
+fields in each entry that is an artifact of our simulation, the first of which is a flag to denote a floating point entry, and 
+mark that the result of the next entry is a continuation of the current one.  The second element that is an artifact of the
+simulator is the cycles counter, which acts as a timing simulator and will determine when the result will finally be produced
+by the execution unit.  The ROB is simply an array of these entry structures, and two pointers (32 bits) that will point
+to the head or tail of the circular FIFO buffer.  Also the variables used for power tabulation are a part of the structure as 
+another artifact of our simulator.
 
-The circular ROB is considered full when the tail pointer reaches the head pointer, as the head pointer denotes the start of the in-use region and no more space can be reserved from the tail pointer. Conversely, then buffer is empty when the head pointer catches up to the tail pointer, as every instruction in the buffer has now been committed to the ARF.
+The behavioral simulation is broken down into three main sections.  First is the update stage, which will cycle 
+through each entry of the ROB, and decrement the cycles counter.  When it reaches zero, the valid flag is marked and the
+result is stored into the result element of the entry.  Next is the ARF stage, where the top N entries are checked
+for its valid flag (where N is the ways the processor is super scalar).  The entries are committed to the ARF if it is at 
+the head of the buffer and its valid flag is set.
+Lastly we simulate the interaction with the instruction queues.  Place holder spots are written at the tail of the buffer
+at most N times. The place holder entry will unmark the valid flag (if it was previously set), and insert the pipeline cycle
+time until execution completion. Also in this stage we check if operand forwarding is needed for any instructions that is 
+requested by the IQ.  These three stages will repeat until the end of the instruction stream.
 
 \subsubsection{Distributed (Cluster based) ROB}
 Our distributed (cluster based) ROB is modeled similarly to the circular ROB.  Instead of having a single ROB buffer, 
