@@ -121,6 +121,46 @@ In deallocating the buffer, turning off the first partition after the tail point
 
 One last optimization we implemented was just-in-time allocation of partitions. Normally, when the tail pointer increments, if a partition is not active the tail pointer simply skips it. In our optimization, before skipping the tail pointer will check if the disabled partition is marked to be enabled. If so, instead of skipping over it, the partition will be turned on and the tail pointer will write into it. This ensures that each partition to be turned on is enabled at the last possible moment, saving the energy that would otherwise be consumed by an empty partition waiting to be written into.
 
+\begin{table*}[!tb]
+\centering
+\caption{FP Heavy Instruction Profile Results(B1)}
+\begin{tabular}{|c|c|c|c|c|c|} \hline
+    & Circular  & Distrubuted & Dynamic & Dynamic (optimized) & OOP\\ \hline
+Cycles&82,722	&50,541&    	84,211	&84,078&        	82,153\\ \hline
+Bit Cycles&1,483,701,792&	1,399,581,372&	1,453,144,453	&1,470,555,825	&1,522,130,784\\ \hline
+Trans. to High&1,967,483&	1,719,957	&1,942,948	&1,930,476	&3,235,293\\ \hline
+Reg Comp&6,725,088&	6,631,913&	6,710,777&	6,718,043	&11,160,291\\ \hline
+\end{tabular}
+\end{table*}
+
+\begin{table*}[!tb]
+\centering
+\caption{int Heavy Instruction Profile Results(B2)}
+\begin{tabular}{|c|c|c|c|c|c|} \hline
+    & Circular  & Distrubuted & Dynamic & Dynamic (optimized) & OOP\\ \hline
+Cycles&25,781&	25,794&	26,079	&25,783	&25,780\\ \hline
+Bit Cycles&462,408,016	&714,287,448	&310,408,263	&317,109,601	&477,651,840\\ \hline
+Trans. to High&1,347,679&	1,134,479	&1,363,418&	1,369,396	&2,262,036\\ \hline
+Reg Comp&3,220,687	&3,221,904	&3,219,866	&3,221,335&	5,155,838\\ \hline
+\end{tabular}
+\end{table*}
+
+\begin{table*}[!tb]
+\centering
+\caption{Mix Instruction Profile Results(B3)}
+\begin{tabular}{|c|c|c|c|c|c|} \hline
+    & Circular  & Distrubuted & Dynamic & Dynamic (optimized) & OOP\\ \hline
+Cycles&29,858	&29,914	&31,733	&30,509	&29,845\\ \hline
+
+Bit Cycles&535,533,088&	828,378,488&	352,433,432	&342,715,483	&552,968,160\\ \hline
+
+Trans. to High&4,591,862	&4,585,663	&4,588,186&	4,603,780&	6,758,124\\ \hline
+
+Reg Comp&1,688,252&	1,436,544	&1,655,666	&1,657,563	&2,802,135\\ \hline
+\end{tabular}
+\end{table*}
+
+
 \subsubsection{Omitted Output Port ROB (Retention Latch)}
 The main difference between the Circular ROB and the Omitted Output Port (OOP) ROB is that the OOP adds in a retention latches and is not allowed to forward any results directly to DU.  This our implementation of the OOP ROB simply extends the circular ROB, adding in a structure for the retention latches.  The latches is modeled very similar to the ROB entries, an array
 of a latch entry structure.  Each latch entry contains a 32 bit value for the results to be stored as well small tag to the corresponding destination register of the result.  As an artifact of our simulation a flag to denote that the entry is part of a floating point operation is required as well.  Also an additional counter was added to count the additional re-forwarding when a value is committed to the ARF but also needs to be forwarded to the DU unit as well.  Though this is not an increasing number of ports driven, it may affect future power calculations relating to capacitance.  Lastly as changing the semantic of the number of forwards to the DU, the count refers to the number time the entry is read from a retention latch.

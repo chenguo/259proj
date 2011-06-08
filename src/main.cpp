@@ -185,7 +185,7 @@ ins_t *generate_instruction_stream(int benchmark, int print_flags) {
   applu173_fp.fmultProc = 0.13;
   applu173_fp.fdivProc = 0.13;
   applu173_fp.forwardingRate = 0.06;
-  applu173_fp.instCount = 100000;
+  applu173_fp.instCount = 20;
 
   ins_profile fma3d191_int;
   fma3d191_int.loadProc = 0.12;
