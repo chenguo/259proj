@@ -17,4 +17,23 @@ concepts for future power efficient ROB designs.
 \keywords{Power efficiency, ROB, Simulation} % NOT required for Proceedings
 
 \section{Introduction}
-BLAH BLAH BLAH INTRO WEEEE
+Out of order execution is a common technique used to aggressively push instruction
+throughput to meet the demands of modern computer users.  As the name suggests
+this allows for instructions to be inflight while previous instructions may still be waiting 
+for an available execution unit or operands.  To accomplish this, two additional structures/stages
+are necessary  on top of the traditional pipelined architecture.  Both of these additional
+structures are essentially memory elements. The first one to keep track of which instructions
+are ready to be executed and the other known as the ROB, allows the processor  to commit the
+results of execution in program order to maintain program correctness.  
+
+Through out its evolution the the ROB has grown to a large monolithic structure that consumes
+on average 7\% of the overall processor power budget\cite{rabey}.  Various new implementations
+of the ROB have been proposed in an effort to reduce power consumption.  Some of which 
+dynamically change the the size of the ROB, or a banked buffer structure and other proposals argues in the 
+extreme case to eliminate read ports all together\cite{kucuk}\cite{kucuk2} \cite{kucuk3}.
+
+With the rapid change of manufacturing technologies and other impacts on energy utilization it 
+becomes hard to determine the gain of each new proposed implementation.  We propose a new
+a loosely cycle accurate ROB simulator that provides a fair comparison of  different ROB designs.
+ROB\_pwr is a simulator that tabulates each action that would cost power.  This allows for a fair
+comparison between each ROB design, without the concern for the underlying technology. 
