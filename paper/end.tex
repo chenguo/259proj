@@ -2,7 +2,18 @@
 \def\floatpagefraction{.8}
 
 \section{Results}
+For each of the three modeled SPEC benchmarks, 100,000 instruction were generated, and processed with each of the reorder buffer types. Instruction generation is seeded, so for each particular benchmark, each type of reorder buffer processes the same exact instructions. We model at 256 entry reorder buffer, running with a 4 way superscalar processor having three integer functional units and one FP functional unit. The results are tabulated in tables \ref{tab:bench1}, \ref{tab:bench2}, and \ref{tab:bench3}.
 
+
+
+\subsection{Dynamic and Optimized Dynamic ROB}
+In the FP heavy 173.applu benchmark, neither of the dynamic ROB's fared well. The IPC degradation was minimal, as the basic dynamic buffer took 1.8\% extra cycles to complete the instruction streem, and the optimized version did little better, at 1.6\% more cycles. However, looking at the bit-cycles measurement, we see that not much bits were saved per cycle. Dividing by the number of cycles, we see that while the circular buffer powered an average of 17,936 bits per cycle, the dynamic buffer powered 17,256 bits per cycle, and the optimized dynamic buffer powered 17,490 bits per cycle. All this is to indicate that the buffer very rarely emptied to a point where a parititon could be turned off. This is likely because we have only 1 FP unit, thus the buffer was never able to commit more than one instruction per cycle.
+
+For the integer heavy instruction stream, the dynamic ROB's performed much better. The IPC degradation was again minimal, at 1.1\% for the dynamic ROB and amazingly only two cycles for the optimized version. This could be because the circular buffer itself rarely filled up, therefore even if the optmized dynamic buffer was running with a smaller capacity stalls due to the buffer being full was extremely rare. In terms of power saved, we see both the dynamic buffers were able to turn off partitions with regularity. Where the ciruclar buffer averaged 17,936 bits per cycle, in this instruction stream the dynamic ROB averaged 11,903 bits, and the optimized versino averaged 12,299. For the total bit-cycles, the dynamic buffer saved 33\%, while the optimized version saved 31\%. We see here that the optimized buffer opted to have more partitions enabled in exchange for better IPC performance.
+
+Lastly, the mixed 183.equake instruction stream saw the buffers perform similarly to the integer set. The dynamic buffer suffered 6.3\% IPC degradation, while the optimized dynamic ROB had an IPC drop of 2.2\%. Bit cycles wise, the dynamic buffer saved 34\%, while the optimized dynamic buffer was able to save 36\%. In terms of bits enabled per cycle, the dynamic ROB 11,106 bits per cycle, and the optimized buffer enabled 11,233 bits per cycle.
+
+For the FP heavy stream, we saw essentially no advantages using the dynamic approach, due to our modeled processor having only one FP functional unit clogging the buffer. With the other two streams, we saw dramatic improvement in power savings from the dynamic buffer, in the form of saved bit cycles.
 
 \section{Conclusions}
 ending stuff
