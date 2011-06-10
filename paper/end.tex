@@ -13,7 +13,7 @@ For the integer heavy instruction stream, the dynamic ROB's performed much bette
 
 Lastly, the mixed 183.equake instruction stream saw the buffers perform similarly to the integer set. The dynamic buffer suffered 6.3\% IPC degradation, while the optimized dynamic ROB had an IPC drop of 2.2\%. Bit cycles wise, the dynamic buffer saved 34\%, while the optimized dynamic buffer was able to save 36\%. In terms of bits enabled per cycle, the dynamic ROB 11,106 bits per cycle, and the optimized buffer enabled 11,233 bits per cycle.
 
-For the FP heavy stream, we saw essentially no advantages using the dynamic approach, due to our modeled processor having only one FP functional unit clogging the buffer. With the other two streams, we saw dramatic improvement in power savings from the dynamic buffer, in the form of saved bit cycles.
+For the FP heavy stream, we saw essentially no advantages using the dynamic approach, due to our modeled processor having only one FP functional unit clogging the buffer. With the other two streams, we saw dramatic improvement in power savings from the dynamic buffer, in the form of saved bit cycles. It is observed that the optimized ROB is a bit more performance minded than the regular dynamic ROB, averaging more bits per cycle and less cycles to complete. In the integer heavy set, this combination yielded a 2.2\% increase in bit-cycles for the optimized dynamic buffer, while in the mixed stream the difference in cycles pushed the optimized dynamic ROB's bit-cycles to be 2.8\% better than the non-optimized case.
 
 \section{Conclusions}
 ending stuff
