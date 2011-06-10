@@ -15,5 +15,33 @@ Lastly, the mixed 183.equake instruction stream saw the buffers perform similarl
 
 For the FP heavy stream, we saw essentially no advantages using the dynamic approach, due to our modeled processor having only one FP functional unit clogging the buffer. With the other two streams, we saw dramatic improvement in power savings from the dynamic buffer, in the form of saved bit cycles. It is observed that the optimized ROB is a bit more performance minded than the regular dynamic ROB, averaging more bits per cycle and less cycles to complete. In the integer heavy set, this combination yielded a 2.2\% increase in bit-cycles for the optimized dynamic buffer, while in the mixed stream the difference in cycles pushed the optimized dynamic ROB's bit-cycles to be 2.8\% better than the non-optimized case.
 
+\subsection{Omited Output Port ROB}
+The Latch ROB results shown in the tables are produced from the parameters 
+speficed above with 16 FIFO retention latches. Looking at the result tables,
+ we see that the OOP ROB has comperable performance (in cycle) when compared 
+to basline Circular ROB.  Showing that the additional slowdown caused by the
+ non-availibilty of the operand when it enters the ROB is negligible, which
+matches with the designers argument \cite{kucuk}.  
+
+Next we see that the rest of the power usage parameters are have all been 
+increased.  Both the bit cycles and transitions to high are slightly higher.
+This is to be expected since there is the additional retention latches 
+strucure, which makes the ROB larger and thus more bits to have a transition
+to the high state.  The same logic applies to the large increase of the
+register comparators used.  Each check for an operand has to check the
+register tag of all the elements in the ROB, and the rentention latches 
+as well.  
+
+From the results tables, it appears that there is no reasonable reason to use
+the OOP ROB.  This is untrue, as the the read port usages for the OOP drops
+significantly.  Since we approximate about 6\% forwarding from the ROB, of 
+100,000 instructions, we would need to foward about 6,000 operands (as a
+lower bound, assuming all the instructions were INT ops).  This equates to
+192,000, bit lines that needs to be driven for operand forwading.  Also with
+the elimination of the forwarding ports, the design of the ROB becomes much 
+simplier as well. With increasing forward rates required, the energy savings
+will increase.
+
+
 \section{Conclusions}
 ending stuff
