@@ -4,13 +4,16 @@
 \section{Results}
 For each of the three modeled SPEC benchmarks, 100,000 instruction were generated, and processed with each of the reorder buffer types. Instruction generation is seeded, so for each particular benchmark, each type of reorder buffer processes the same exact instructions. We model at 256 entry reorder buffer, running with a 4 way superscalar processor having three integer functional units and one FP functional unit. The results are tabulated in tables \ref{tab:bench1}, \ref{tab:bench2}, and \ref{tab:bench3}.
 
+Cycles measure the number of cycles a particular ROB implementation takes from getting the first instruction from issue to committing the last instruction in the stream. Bit-cycles denote total number of bits in the ROB that are powered for one cycle. E.g., a 20-bit buffer running for 8 cycles yields a measurement of 160 bit-cycles. We implement buffers that trade off execution time and extra bits for power savings in various ways, and bit-cycles, once plugged into a energy model system, provides a good measure of how much leakage power will be consumed. Transition to high is self-descriptive, and is included in the table as a measure of dynamic power dissipation. Register comparators estimate the number of times comparators are used to on register addresses and head/tail pointers.
+
 \subsection{Distributed ROB}
 
 Our results for the distributed ROB are largely invalid for two reasons. One, much of the savings in the distributed ROB comes from shorter bit-lines and less copmlex entry selection from the size reduction of each individual buffer, however this is not currently modeled in our reorder-buffer simulator. Next, our implementation is actually buggy, as is obvious from the results.
 
 From the first instruction stream, heavy on floating point instructions, we see the distributed buffer measures some thiry thousand less cycles to complete than the circular buffer. In \cite{kucuk4}, the improvement for FP instructions over the base buffer did improve very slightly (we note that they were also modelling a processor with many more FP functional units than the ones we used), but to the degree we see is impossible. We monitored the buffer and indeed found corruption in the contents within the first 30 instructions, but ultimately were unable to find the source of the error.
 
-For all instruction streams, we note that while the circular ROB powered 17,936 bits pe cycle (bit-cycles / cycles), the distributed ROB powered 27,692 bits per cycle. This is largely due to the presence of the central FIFO queue, which must keep a set of pointers to the location of actual entries in the ROB components of each functional unit. The extra cost of this is offset by shorter bit-lines and word-select lines, which as previously mentioned are not currently tabulated.
+For all instruction streams, we note that while the circular ROB powered 17,936 bits pe cycle (bit-cycles / cycles), the distributed ROB powered 27,692 bits per cycle. This is due to the presence of the central FIFO queue, which must keep a set of pointers to the location of actual entries in the ROB components of each functional unit. The basic circular buffer requires 70 bits per entry. For the FIFO queue, 37 extra bits are required for each entry in each ROB component, an increase of 53\%.
+The extra cost of this is offset by shorter bit-lines and word-select lines, which as previously mentioned are not currently tabulated.
 
 
 \subsection{Dynamic and Optimized Dynamic ROB}
