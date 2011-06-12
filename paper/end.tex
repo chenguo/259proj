@@ -52,6 +52,34 @@ the elimination of the forwarding ports, the design of the ROB becomes much
 simplier as well. With increasing forward rates required, the energy savings
 will increase.
 
+\section{Future Works}
+We have proposed a novel loosley cycle accurate power simulator for a processor's
+ROB.  With loose timing, the simulator is able to quickly simulate a stream of
+instructions.  Furthermore by producing only the power tabulation, the simulator
+remains flexible for future emerging technolgies in the underlying circut level.
+This novel approach also allows for fair power effiency comparison between
+existing and new designs.
+
+Currently we have implemented four proposed designs.  This could be expanded covering 
+more ROB designs. Since many of the techniques proposed for energy savings
+are not mutally exclusion, a model could start combineing differnt modes.
+Before preceeding forwards with more models, addtional tools may  be provided to
+catch errornous results early on.  This could prove to be quite useful as currently
+our output results do not make sense.  This could be a small bug in our source or
+a misunderstanding of the mechinism for the ROB.
+
+Additionally, we designed our simultor to be as modular as possible.  This allows
+for future expansions on the simulator. This could include additional stages of 
+the instruction lifetime such as the issue queue, or execution units.  With other
+other component simulators a entire cycle accurate simulator could be created, with 
+the flexibility to tune its accuracy and simulation run time. Another type of 
+add-on module could be created and and translate our power tabulations into actual
+power usages in joules.
+
+Lastly further would could be expaned on our instruction generation.  As we 
+currently generate synthetic instructions based on various profiles.  It would
+be ideal to load in an actual instruction trace produced by alternative cycle 
+accurate simulator.  This would 
 
 \section{Conclusions}
 ending stuff
