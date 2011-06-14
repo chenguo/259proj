@@ -140,7 +140,9 @@ void help ()
 {
   cout << "ROB Power Simulator usage information:" << endl;
   cout << "  $ rob_pwr [OPTIONS]..." << endl;
-  cout << "Options" << endl;
+  cout << "Example use:" << endl;
+  cout << "./rob_pwr -m circular -b 1" << endl;
+  cout << "Options:" << endl;
   cout << "  -d         Enable debug messages." << endl;
   cout << "  -h         Display this help message." << endl;
   cout << "  -m         Set operating mode. See \"Modes\"" << endl;

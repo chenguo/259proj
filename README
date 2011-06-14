@@ -4,3 +4,14 @@
 
   Model and compare different reorder buffer implementations. For CS 259,
 spring 2011 at UCLA, taught by Milos Ercegovac.
+
+BUILDING:
+make clean  (if necessary)
+make
+
+RUNNING:
+./rob_pwr -h    (shows the options and modes and benchmarks)
+./rob_pwr -m dynamic -b 1    (just an example)
+
+For all options and simulation modes,  run:
+./rob_

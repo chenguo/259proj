@@ -275,7 +275,7 @@ uint32_t ROB_Dist::getCyclesToCompletion(uint32_t reg) {
       fifo_entry_t *fifo_entry = return_fifo_entry(i);
       entry_t *entry = get_entry(fifo_entry->rob_id, fifo_entry->rob_index);
       if(entry->reg_id == reg) {
-        cout << "Found reg: " << reg << "in entry.pc:" << entry->pc << endl;
+        //cout << "Found reg: " << reg << "in entry.pc:" << entry->pc << endl;
         return entry->cycles;
       }
       i = fifo_ptr_incr(i);
@@ -303,17 +303,17 @@ void ROB_Dist::write_entry(uint32_t clusterId, ins_t ins)
 
   if(isinROB (operandRegA)) {
     extraCyclesA = getCyclesToCompletion(operandRegA);
-    cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
     m_nwdu++;
   }
   if(isinROB (operandRegB)) {
     extraCyclesB = getCyclesToCompletion(operandRegB);
-    cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
+    //cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
     m_nwdu++;
   }
   uint32_t maxExtraCycles = max(extraCyclesA, extraCyclesB);
   if(maxExtraCycles)
-    cout << "Increasing ins.pc=" << ins.pc << " cycles cout by " << maxExtraCycles << " to allow forwarding" << endl;
+    //cout << "Increasing ins.pc=" << ins.pc << " cycles cout by " << maxExtraCycles << " to allow forwarding" << endl;
   entry->cycles += maxExtraCycles;
 
   entry->pc = ins.pc;
