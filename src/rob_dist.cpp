@@ -129,7 +129,9 @@ void ROB_Dist::update_entries ()
   do {
     fifo_entry_t *fifo_entry = return_fifo_entry (i);
     entry_t *entry = get_entry(fifo_entry->rob_id, fifo_entry->rob_index);
-    if (entry->cycles && --entry->cycles == 0) {
+    if (m_print & DBG_FLAG)
+      cout << "Decrementing central_fifo[" << i << "]: " << entry->cycles << "->" << entry->cycles-1 << endl;
+    if (entry->cycles > 0 && --entry->cycles == 0) {
       if (m_print & DBG_FLAG)
         cout << "Got result for central_fifo[" << i << "] -> rob[" << fifo_entry->rob_id << "][" << fifo_entry->rob_index << "]" << endl;
       entry->valid = true;
@@ -272,8 +274,10 @@ uint32_t ROB_Dist::getCyclesToCompletion(uint32_t reg) {
     do {
       fifo_entry_t *fifo_entry = return_fifo_entry(i);
       entry_t *entry = get_entry(fifo_entry->rob_id, fifo_entry->rob_index);
-      if(entry->reg_id == reg)
+      if(entry->reg_id == reg) {
+        cout << "Found reg: " << reg << "in entry.pc:" << entry->pc << endl;
         return entry->cycles;
+      }
       i = fifo_ptr_incr(i);
     } while(i != fifo_tail);
   if (m_print & DBG_FLAG)
@@ -292,6 +296,26 @@ void ROB_Dist::write_entry(uint32_t clusterId, ins_t ins)
   entry->cycles = ins_cyc[ins.type];
   if (ins.type >= FADD)
     entry->cycles += m_fp_delay;
+  uint32_t operandRegA = ((ins.regs >> 4) & reg_mask);
+  uint32_t operandRegB = ((ins.regs >> 8) & reg_mask);
+  uint32_t extraCyclesA = 0;
+  uint32_t extraCyclesB = 0;
+
+  if(isinROB (operandRegA)) {
+    extraCyclesA = getCyclesToCompletion(operandRegA);
+    cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
+    m_nwdu++;
+  }
+  if(isinROB (operandRegB)) {
+    extraCyclesB = getCyclesToCompletion(operandRegB);
+    cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
+    m_nwdu++;
+  }
+  uint32_t maxExtraCycles = max(extraCyclesA, extraCyclesB);
+  if(maxExtraCycles)
+    cout << "Increasing ins.pc=" << ins.pc << " cycles cout by " << maxExtraCycles << " to allow forwarding" << endl;
+  entry->cycles += maxExtraCycles;
+
   entry->pc = ins.pc;
   fifo_entry->pc = ins.pc;
   entry->reg_id = ins.regs & reg_mask;
@@ -305,26 +329,6 @@ void ROB_Dist::write_entry(uint32_t clusterId, ins_t ins)
 
   m_tail[clusterId] = ptr_incr (m_tail[clusterId]);
   fifo_tail = fifo_ptr_incr(fifo_tail);
-
-  uint32_t operandRegA = ((ins.regs >> 4) & reg_mask);
-  uint32_t operandRegB = ((ins.regs >> 8) & reg_mask);
-  uint32_t extraCyclesA = 0;
-  uint32_t extraCyclesB = 0;
-
-  if(isinROB (operandRegA)) {
-    extraCyclesA = getCyclesToCompletion(operandRegA);
-    //cout << "Forwarding ins.pc=" << ins.pc << " operandA in " << extraCyclesA << " cycles" << endl;
-    m_nwdu++;
-  }
-  if(isinROB (operandRegB)) {
-    extraCyclesB = getCyclesToCompletion(operandRegB);
-    //cout << "Forwarding ins.pc=" << ins.pc << " operandB in " << extraCyclesB << " cycles" << endl;
-    m_nwdu++;
-  }
-  uint32_t maxExtraCycles = max(extraCyclesA, extraCyclesB);
-  if(maxExtraCycles)
-    //cout << "Increasing ins.pc=" << ins.pc << " cycles cout by " << maxExtraCycles << " to allow forwarding" << endl;
-  entry->cycles += maxExtraCycles;
 }
 
 void ROB_Dist::dist_post_cycle_power_tabulation () {

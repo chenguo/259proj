@@ -1,10 +1,10 @@
 \begin{abstract}
-        In an effort to increase instruction level parallelism techniques such
+        In an effort to increase instruction level parallelism, techniques have been developed such
 as pipelining, out of order execution and operand forwarding.  However
 these efforts come at a large power cost.  Out of order execution requires
 a ReOrder Buffer (ROB), to commit the registers in program order.  This
 structure has grown to be monolithic with numerous entries and read/write ports.
-There is no current methods to efficiently and equally compare various
+There are no current methods to efficiently and equally compare various
 ROB advancements to improve power efficiency. We propose a loosely cycle
 accurate model that keeps track of the power usages of the ROB.  Using the 
 simulation tool, we are able to compare and contrast the affects of improvements
@@ -22,18 +22,19 @@ throughput to meet the demands of modern computer users.  As the name suggests
 this allows for instructions to be inflight while previous instructions may still be waiting 
 for an available execution unit or operands.  To accomplish this, two additional structures/stages
 are necessary  on top of the traditional pipelined architecture.  Both of these additional
-structures are essentially memory elements. The first one to keep track of which instructions
-are ready to be executed and the other known as the ROB, allows the processor  to commit the
-results of execution in program order to maintain program correctness.  
+structures are essentially memory elements. The first structure is to keep track of which instructions
+are ready to be executed and the other, known as the reorder buffer (ROB), allows the processor to 
+execute instructions out of order but commit the results of execution in program order to maintain 
+program correctness.  
 
-Through out its evolution the the ROB has grown to a large monolithic structure that consumes
-on average 7\% of the overall processor power budget\cite{rabey}.  Various new implementations
+Throughout its evolution the the ROB has grown to a large monolithic structure that consumes
+on average 7\% of the overall processor power budget\cite{rabaey}.  Various new implementations
 of the ROB have been proposed in an effort to reduce power consumption.  Some of which 
-dynamically change the the size of the ROB, or a banked buffer structure and other proposals argues in the 
+dynamically change the the size of the ROB or propose a banked buffer structure and other proposals argues in the 
 extreme case to eliminate read ports all together\cite{kucuk}\cite{kucuk2} \cite{kucuk3}.
 
 With the rapid change of manufacturing technologies and other impacts on energy utilization it 
 becomes hard to determine the gain of each new proposed implementation.  We propose a new
-a loosely cycle accurate ROB simulator that provides a fair comparison of  different ROB designs.
-ROB\_pwr is a simulator that tabulates each action that would cost power.  This allows for a fair
+and loosely cycle accurate ROB simulator that provides a fair comparison of  different ROB designs.
+ROB\_pwr is a simulator that tabulates each hardware action that would cost power.  This allows for a fair
 comparison between each ROB design, without the concern for the underlying technology. 

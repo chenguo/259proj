@@ -218,11 +218,6 @@ void ROB_Circ::write_entry (entry *entry, ins_t ins)
   entry->cycles = ins_cyc[ins.type];
   if (ins.type >= FADD)
     entry->cycles += m_fp_delay;
-  entry->pc = ins.pc;
-  entry->reg_id = ins.regs & reg_mask;
-  entry->isfp = (ins.type >= FADD);
-
-  m_tail = tail_incr (m_tail);
   uint32_t operandRegA = ((ins.regs >> 4) & reg_mask);
   uint32_t operandRegB = ((ins.regs >> 8) & reg_mask);
   uint32_t extraCyclesA = 0;
@@ -241,6 +236,12 @@ void ROB_Circ::write_entry (entry *entry, ins_t ins)
   if(maxExtraCycles)
     //cout << "Increasing ins.pc=" << ins.pc << " cycle count by " << maxExtraCycles << " to allow forwarding" << endl;
   entry->cycles += maxExtraCycles;
+
+  entry->pc = ins.pc;
+  entry->reg_id = ins.regs & reg_mask;
+  entry->isfp = (ins.type >= FADD);
+
+  m_tail = tail_incr (m_tail);
 }
 
 void ROB_Circ::pre_cycle_power_snapshot () {
